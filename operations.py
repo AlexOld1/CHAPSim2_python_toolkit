@@ -94,7 +94,13 @@ def window_average(data_t1, data_t2, t1, t2, stat_start_timestep):
         return data_t2  # If no difference, return the second timestep data directly
     else:
         return (stat_t2 * data_t2 - stat_t1 * data_t1) / t_diff
-    
+
+def analytical_laminar_mhd_prof(case, Re_bulk, Re_tau): # U. Müller, L. Bühler, Analytical Solutions for MHD Channel Flow, 2001.
+        u_tau = Re_tau / Re_bulk
+        y = np.linspace(0, 1, 100) * Re_tau
+        prof = (((Re_tau * u_tau)/(case * np.tanh(case)))*((1 - np.cosh(case * (1 - y)))/np.cosh(case)) + 1.225)
+        return prof
+
 def compute_vel_fluctuation(inst_data, time_avg_data):
 
     vel_fluc = inst_data - time_avg_data

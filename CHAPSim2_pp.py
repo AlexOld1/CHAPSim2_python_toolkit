@@ -9,8 +9,12 @@ import matplotlib.pyplot as plt
 import math
 import pyvista as pv
 
+# import modules --------------------------------------------------------------------------------------------------------------------------------------
+
 import operations as op
 import utils as ut
+
+# =====================================================================================================================================================
 
 # Define input cases ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -30,9 +34,14 @@ u_prime_v_prime_on = True
 w_prime_sq_on = True
 v_prime_sq_on = True
 
-# 3D visualisation
+# 3D visualisation (under construction)
 visualisation_on = True
 
+instant_ux_on = True
+instant_uy_on = False
+instant_uz_on = False
+instant_press_on = False
+instant_phi_on = False
 
 # Processing options ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -69,9 +78,6 @@ Ana_Re_tau = 150
 
 # Define file paths -----------------------------------------------------------------------------------------------------------------------------------
 
-def data_filepath(folder_path, case, quantity, timestep):
-    return f'{folder_path}{case}/1_data/domain1_time_space_averaged_{quantity}_{timestep}.dat'
-
 # Channel flow reference data (isothermal, no mhd, Re_tau = 180) - 
 # "DNS of Turbulent Channel Flow up to Re_tau = 590", R. D. Moser, J. Kim & N. N. Mansour, 1999 (Phys. Fluids, vol 11, pg 943-945).
 ref_mkm180_means_path = 'Reference_Data/MKM180_profiles/chan180.means'
@@ -79,16 +85,17 @@ ref_mkm180_reystress_path = 'Reference_Data/MKM180_profiles/chan180.reystress'
 
 # mhd channel flow reference data (isothermal, transverse magnetic field, Ha = 4, 6, Re_tau = 150) - thtlabs.jp
 NK_ref_paths = {
-    'ref_NK_Ha_6' : 'CHAPSim2_pp/Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_6_turb.txt',
-    'ref_NK_Ha_4' : 'CHAPSim2_pp/Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_4_turb.txt',
-    'ref_NK_uv_Ha_6' : 'CHAPSim2_pp/Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_6_uv_rms.txt',
-    'ref_NK_uv_Ha_4' : 'CHAPSim2_pp/Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_4_uv_rms.txt',
+    'ref_NK_Ha_6' : 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_6_turb.txt',
+    'ref_NK_Ha_4' : 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_4_turb.txt',
+    'ref_NK_uv_Ha_6' : 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_6_uv_rms.txt',
+    'ref_NK_uv_Ha_4' : 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_4_uv_rms.txt',
 }
 
 # mhd channel flow reference data - XCompact3D (isothermal, transverse magnetic field, Ha = 4, 6, Re_tau = 150) - 
 # "A high-order finite-difference solver for direct numerical simulations of magnetohydrodynamic turbulence", J. Fang, S. Laizet & A. Skillen (Comp. Phys Comms., 2025)
 ref_XComp_Ha_6_path = 'Reference_Data/XCompact3D_mhd_validation/u_prime_sq.txt'
 
+# =====================================================================================================================================================
 
 # Load reference data ---------------------------------------------------------------------------------------------------------------------------------
 
@@ -113,28 +120,71 @@ if mhd_XCompact_ref_on:
 else:
     print("XCompact mhd reference is disabled or required data is missing")
 
-# Load case data --------------------------------------------------------------------------------------------------------------------------------------
+# Load and store case data ----------------------------------------------------------------------------------------------------------------------------
 
-def load_case_data(case, quantity, timestep):
-    try:
-        return np.loadtxt(data_filepath(folder_path, case, quantity, timestep))
-    except OSError:
-        print(f'Error loading data for {case}, {quantity}, {timestep}')
-        return None
+# time & space averaged data (.dat files)
 
-# Store all data
-
-all_case_data = {}
-all_case_data.clear()  # Clear any existing keys
+ts_avg_data = {}
+ts_avg_data.clear()  # Clear any existing keys
 
 for case in cases:
     for timestep in timesteps:
         for quantity in quantities:
             key = (case, quantity, timestep)
-            data = load_case_data(case, quantity, timestep)
+            file_path = ut.data_filepath(folder_path, case, quantity, timestep)
+            data = ut.load_ts_avg_data(file_path)
             if data is not None:
-                all_case_data[key] = data
-print(all_case_data.keys)
+                ts_avg_data[key] = data
+print(ts_avg_data.keys)
+
+# 3D visualisation data (.xdmf files)
+
+visu_data = {}
+visu_data.clear()
+grid_info = {}
+
+for case in cases:
+    for timestep in timesteps:
+
+        print(f"\n{'-'*60}")
+        print(f"Processing: {case}, {timestep}")
+        print(f"{'-'*60}")
+
+        key = (case, timestep)
+        file_names = ut.visu_file_paths(folder_path, case, timestep)
+        arrays, grid_info_cur = ut.read_xdmf_extract_numpy_arrays(file_names)
+
+        if arrays:
+            # Store arrays with timestep prefix
+            key_arrays = {f"{key}": value for key, value in arrays.items()}
+            visu_data.update(key_arrays)
+            
+            # Store grid info (should be same for all timesteps)
+            if not grid_info and grid_info_cur:
+                grid_info = grid_info_cur
+            
+            print(f"\nSuccessfully extracted {len(arrays)} arrays from case {case}, timestep {timestep}")
+        else:
+            print(f"No arrays extracted from timestep {timestep}")
+
+if visu_data:
+    ut.reader_output_summary(visu_data)
+        
+    # Print grid information
+    if grid_info:
+        print(f"\n{'='*60}")
+        print("GRID INFORMATION")
+        print(f"{'='*60}")
+        for key, value in grid_info.items():
+             print(f"{key}: {value}")
+
+    # PRint Array Extraction info
+    print(f"\nTotal arrays extracted: {len(visu_data)}")
+                
+else:
+    print("No arrays were successfully extracted.")
+
+# =====================================================================================================================================================
 
 # dictionary for turbulence statistics ----------------------------------------------------------------------------------------------------------------
 
@@ -149,8 +199,8 @@ if ux_velocity_on:
     for case in cases:
         for timestep in timesteps:
             key_ux = (case, 'ux', timestep)
-            if key_ux in all_case_data:
-                ux_data = all_case_data[key_ux]
+            if key_ux in ts_avg_data:
+                ux_data = ts_avg_data[key_ux]
                 ux_velocity[(case, timestep)] = op.read_velocity_profile(ux_data)
                 all_turb_stats['ux_velocity'] = ux_velocity
 else:
@@ -165,10 +215,10 @@ if u_prime_sq_on and 'uu' in quantities and 'ux' in quantities:
         for timestep in timesteps:
             key_uu = (case, 'uu', timestep)
             key_ux = (case, 'ux', timestep)
-            if key_uu in all_case_data and key_ux in all_case_data:
+            if key_uu in ts_avg_data and key_ux in ts_avg_data:
                 
-                uu_data = all_case_data[key_uu]
-                ux_data = all_case_data[key_ux]
+                uu_data = ts_avg_data[key_uu]
+                ux_data = ts_avg_data[key_ux]
                 result = op.compute_u_prime_sq(ux_data, uu_data)
                 u_prime_sq[(case, timestep)] = result
                 all_turb_stats['u_prime_sq'] = u_prime_sq
@@ -183,10 +233,10 @@ if u_prime_v_prime_on and 'uv' in quantities and 'ux' in quantities and 'uy' in 
             key_uv = (case, 'uv', timestep)
             key_ux = (case, 'ux', timestep)
             key_uy = (case, 'uy', timestep)
-            if key_uv in all_case_data and key_ux in all_case_data and key_uy in all_case_data:
-                uv_data = all_case_data[key_uv]
-                ux_data = all_case_data[key_ux]
-                uy_data = all_case_data[key_uy]
+            if key_uv in ts_avg_data and key_ux in ts_avg_data and key_uy in ts_avg_data:
+                uv_data = ts_avg_data[key_uv]
+                ux_data = ts_avg_data[key_ux]
+                uy_data = ts_avg_data[key_uy]
                 result = op.compute_u_prime_v_prime(ux_data, uy_data, uv_data)
                 u_prime_v_prime[(case, timestep)] = result
                 all_turb_stats['u_prime_v_prime'] = u_prime_v_prime
@@ -200,9 +250,9 @@ if w_prime_sq_on and 'ww' in quantities and 'uz' in quantities:
         for timestep in timesteps:
             key_ww = (case, 'ww', timestep)
             key_uz = (case, 'uz', timestep)
-            if key_ww in all_case_data and key_uz in all_case_data:
-                ww_data = all_case_data[key_ww]
-                uz_data = all_case_data[key_uz]
+            if key_ww in ts_avg_data and key_uz in ts_avg_data:
+                ww_data = ts_avg_data[key_ww]
+                uz_data = ts_avg_data[key_uz]
                 result = op.compute_w_prime_sq(uz_data, ww_data)
                 w_prime_sq[(case, timestep)] = result
                 all_turb_stats['w_prime_sq'] = w_prime_sq
@@ -216,9 +266,9 @@ if v_prime_sq_on and 'vv' in quantities and 'uy' in quantities:
         for timestep in timesteps:
             key_vv = (case, 'vv', timestep)
             key_uy = (case, 'uy', timestep)
-            if key_vv in all_case_data and key_uy in all_case_data:
-                vv_data = all_case_data[key_vv]
-                uy_data = all_case_data[key_uy]
+            if key_vv in ts_avg_data and key_uy in ts_avg_data:
+                vv_data = ts_avg_data[key_vv]
+                uy_data = ts_avg_data[key_uy]
                 result = op.compute_v_prime_sq(uy_data, vv_data)
                 v_prime_sq[(case, timestep)] = result
                 all_turb_stats['v_prime_sq'] = v_prime_sq
@@ -278,17 +328,11 @@ if mhd_XCompact_ref_on:
 Ana_lam_Ha_prof = {}
 Ana_lam_Ha_prof.clear()  # Clear any existing keys
 
-def analytical_laminar_mhd_prof(case, Re_bulk, Re_tau): # U. Müller, L. Bühler, Analytical Solutions for MHD Channel Flow, 2001.
-        u_tau = Re_tau / Re_bulk
-        y = np.linspace(0, 1, 100) * Re_tau
-        prof = (((Re_tau * u_tau)/(case * np.tanh(case)))*((1 - np.cosh(case * (1 - y)))/np.cosh(case)) + 1.225)
-        return prof
-
 if Analytical_lam_mhd_on:
     for case in Analytical_lam_Ha:
 
         Re_bulk = op.get_Re(case, cases, Re)
-        Ana_lam_Ha_prof[case] = analytical_laminar_mhd_prof(case, Re_bulk, Ana_Re_tau)
+        Ana_lam_Ha_prof[case] = op.analytical_laminar_mhd_prof(case, Re_bulk, Ana_Re_tau)
         print(f'Calculated analytical laminar profile for case = {case}')
 else:
     print(f'Analytical MHD laminar profile calculation is disabled or required data is missing.')
@@ -308,8 +352,8 @@ for turb_stat, stat_dict in all_turb_stats.items():
         # Define key for ux data
 
         key_ux = (case, 'ux', timestep)
-        if key_ux in all_case_data:
-            ux_data = all_case_data[key_ux]
+        if key_ux in ts_avg_data:
+            ux_data = ts_avg_data[key_ux]
         else:
          print(f'Missing ux data for normalisation calc')
 
@@ -339,8 +383,8 @@ for turb_stat, stat_dict in all_turb_stats.items():
 
         if window_average_on:
             key_low_bound = (case, quantity, f'{window_average_val_lower_bound}')
-            if key_low_bound in all_case_data:
-                data_t1 = all_case_data[key_low_bound]
+            if key_low_bound in ts_avg_data:
+                data_t1 = ts_avg_data[key_low_bound]
                 data_t1 = data_t1[:, 2]
                 data_t1 = op.symmetric_average(data_t1)
                 win_nor_avg = op.window_average(data_t1, normed, int(window_average_val_lower_bound), int(timestep), int(stat_start_timestep))
@@ -353,6 +397,7 @@ for turb_stat, stat_dict in all_turb_stats.items():
         # Store the normalised and averaged data
         turb_stats_norm[turb_stat] = temp_dict
 
+# =====================================================================================================================================================
 
 # Plot ------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -390,8 +435,8 @@ if len(turb_stats_norm) == 1 or multi_plot == False: # creates a single plot for
             # Get y coordinates from ux data
 
             key_ux = (case, 'ux', timestep)
-            if key_ux in all_case_data:
-                ux_data = all_case_data[key_ux]
+            if key_ux in ts_avg_data:
+                ux_data = ts_avg_data[key_ux]
                 y = (ux_data[:len(ux_data)//2, 1] + 1)
                 cur_Re = op.get_Re(case, cases, Re)
                 y_plus = op.norm_y_to_y_plus(y, ux_data, cur_Re)
@@ -485,8 +530,8 @@ elif len(turb_stats_norm) > 1 and multi_plot == True: # creates a different plot
 
             # Get y coordinates from ux data
             key_ux = (case, 'ux', timestep)
-            if key_ux in all_case_data:
-                ux_data = all_case_data[key_ux]
+            if key_ux in ts_avg_data:
+                ux_data = ts_avg_data[key_ux]
                 y = (ux_data[:len(ux_data)//2, 1] + 1)
                 
                 if set_y_plus_scaling:

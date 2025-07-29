@@ -3,16 +3,25 @@ import numpy as np
 from vtkmodules.util.numpy_support import vtk_to_numpy
 import pyvista as pv
 
+def data_filepath(folder_path, case, quantity, timestep):
+    return f'{folder_path}{case}/1_data/domain1_time_space_averaged_{quantity}_{timestep}.dat'
 
-def visu_file_path(folder_path, case, timestep):
+def load_ts_avg_data(data_filepath):
+    try:
+        return np.loadtxt(data_filepath)
+    except OSError:
+        print(f'Error loading data for {data_filepath}')
+        return None
+
+def visu_file_paths(folder_path, case, timestep):
     file_names = [
         f'{folder_path}{case}/2_visu/domain1_flow_{timestep}.xdmf',
-        f'{folder_path}2_visu/domain1_time_averaged_flow_{timestep}.xdmf',
-        f'{folder_path}2_visu/domain1_mhd_{timestep}.xdmf'
+        f'{folder_path}{case}/2_visu/domain1_time_averaged_flow_{timestep}.xdmf',
+        f'{folder_path}{case}/2_visu/domain1_mhd_{timestep}.xdmf'
     ]
     return file_names
 
-def read_xdmf_extract_numpy_arrays(file_names, timestep):
+def read_xdmf_extract_numpy_arrays(file_names):
     """
     Reads XDMF files and extracts numpy arrays from VTK data.
     
@@ -47,7 +56,7 @@ def read_xdmf_extract_numpy_arrays(file_names, timestep):
                 # Extract file type from filename for prefixing
                 if 'time_averaged' in xdmf_file:
                     file_type = 'time_averaged'
-                elif 'mhd' in xdmf_file:
+                elif '_mhd_' in xdmf_file:
                     file_type = 'mhd'  
                 else:
                     file_type = 'flow'
@@ -236,49 +245,6 @@ def reader_output_summary(arrays_dict):
         print(f"{key}:")
         print(f"  Shape: {array.shape},  Min value: {np.min(array):.6e},  Max value: {np.max(array):.6e}   Mean value: {np.mean(array):.6e}")
         print("-" * 40)
-
-if __name__ == "__main__":
-    # Dictionary to store arrays from all timesteps
-    all_timestep_arrays = {}
-    grid_info = {}
-    
-    for timestep in timesteps:
-        print(f"\n{'='*60}")
-        print(f"Processing timestep: {timestep}")
-        print(f"{'='*60}")
-        
-        arrays, grid_info_current = read_xdmf_extract_numpy_arrays(folder_path, timestep)
-        
-        if arrays:
-            # Store arrays with timestep prefix
-            timestep_arrays = {f"t{timestep}_{key}": value for key, value in arrays.items()}
-            all_timestep_arrays.update(timestep_arrays)
-            
-            # Store grid info (should be same for all timesteps)
-            if not grid_info and grid_info_current:
-                grid_info = grid_info_current
-            
-            print(f"\nSuccessfully extracted {len(arrays)} arrays from timestep {timestep}")
-        else:
-            print(f"No arrays extracted from timestep {timestep}")
-    
-    # Provide summary analysis
-    if all_timestep_arrays:
-        reader_output_summary(all_timestep_arrays)
-        
-        # Print grid information
-        if grid_info:
-            print(f"\n{'='*60}")
-            print("GRID INFORMATION")
-            print(f"{'='*60}")
-            for key, value in grid_info.items():
-                print(f"{key}: {value}")
-        
-        # PRint Array Extraction info
-        print(f"\nTotal arrays extracted: {len(all_timestep_arrays)}")
-                
-    else:
-        print("No arrays were successfully extracted.")
 
 def visualise_domain_qx(output, all_numpy_arrays):
     pv_mesh = pv.wrap(output)
