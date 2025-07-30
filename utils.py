@@ -1,3 +1,4 @@
+import os
 import vtk
 import numpy as np
 from vtkmodules.util.numpy_support import vtk_to_numpy
@@ -30,10 +31,10 @@ def read_xdmf_extract_numpy_arrays(file_names):
         timestep (str): Timestep identifier
     
     Returns:
-        tuple: (all_numpy_arrays dict, grid_info dict)
+        tuple: (visu_arrays_dic dict, grid_info dict)
     """
 
-    all_numpy_arrays = {}
+    visu_arrays_dic = {}
     grid_info = {}
     
     for xdmf_file in file_names:
@@ -68,7 +69,7 @@ def read_xdmf_extract_numpy_arrays(file_names):
                 
                 # Get arrays from the dataset
                 dataset_arrays = get_vtk_arrays_with_numpy(output, file_type, grid_info)
-                all_numpy_arrays.update(dataset_arrays)
+                visu_arrays_dic.update(dataset_arrays)
                 print(f"Successfully extracted {len(dataset_arrays)} arrays from {file_type} file")
             else:
                 print(f"Warning: No valid output from {xdmf_file}, file missing or empty")
@@ -77,7 +78,7 @@ def read_xdmf_extract_numpy_arrays(file_names):
             print(f"Error processing {xdmf_file}: {str(e)}")
             continue
     
-    return all_numpy_arrays, grid_info
+    return visu_arrays_dic, grid_info
 
 def extract_grid_info(dataset):
     """
@@ -246,13 +247,13 @@ def reader_output_summary(arrays_dict):
         print(f"  Shape: {array.shape},  Min value: {np.min(array):.6e},  Max value: {np.max(array):.6e}   Mean value: {np.mean(array):.6e}")
         print("-" * 40)
 
-def visualise_domain_qx(output, all_numpy_arrays):
+def visualise_domain_var(output, visu_arrays_dic):
     pv_mesh = pv.wrap(output)
 
     if pv_mesh:
                 # Let's assume you want to plot the 'qx_velocity' cell data
-                    if "cell_data_qx_velocity" in all_numpy_arrays:
-                        qx_velocity = all_numpy_arrays["cell_data_qx_velocity"]
+                    if "cell_data_qx_velocity" in visu_arrays_dic:
+                        qx_velocity = visu_arrays_dic["cell_data_qx_velocity"]
 
                         # Add the NumPy array as cell data to the PyVista mesh
                         pv_mesh.cell_data["qx_velocity"] = qx_velocity

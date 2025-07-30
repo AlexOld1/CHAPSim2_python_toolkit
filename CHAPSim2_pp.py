@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import pyvista as pv
+import os
 
 # import modules --------------------------------------------------------------------------------------------------------------------------------------
 
@@ -62,8 +63,8 @@ log_y_scale = False
 set_y_plus_scaling = False
 y_plus_scale_value = 153
 multi_plot = True
-display_fig = True
-save_fig = False
+display_fig = False
+save_fig = True
 
 # reference data options
 ux_velocity_log_ref_on = True
@@ -132,9 +133,15 @@ for case in cases:
         for quantity in quantities:
             key = (case, quantity, timestep)
             file_path = ut.data_filepath(folder_path, case, quantity, timestep)
-            data = ut.load_ts_avg_data(file_path)
-            if data is not None:
-                ts_avg_data[key] = data
+            file_exists = ut.check_file_exists(file_path)
+            if file_exists:
+                data = ut.load_ts_avg_data(file_path)
+                if data is not None:
+                    ts_avg_data[key] = data
+                else:
+                    print(f'.dat file is empty for {case}, {timestep}, {quantity}')
+            else:
+                print(f'No .dat file found for {case}, {timestep}, {quantity}')
 print(ts_avg_data.keys)
 
 # 3D visualisation data (.xdmf files)
@@ -150,22 +157,30 @@ for case in cases:
         print(f"Processing: {case}, {timestep}")
         print(f"{'-'*60}")
 
-        key = (case, timestep)
         file_names = ut.visu_file_paths(folder_path, case, timestep)
-        arrays, grid_info_cur = ut.read_xdmf_extract_numpy_arrays(file_names)
 
-        if arrays:
-            # Store arrays with timestep prefix
-            key_arrays = {f"{key}": value for key, value in arrays.items()}
-            visu_data.update(key_arrays)
-            
-            # Store grid info (should be same for all timesteps)
-            if not grid_info and grid_info_cur:
-                grid_info = grid_info_cur
-            
-            print(f"\nSuccessfully extracted {len(arrays)} arrays from case {case}, timestep {timestep}")
+        existing_files = [file for file in file_names if os.path.isfile(file)]
+        missing_files = [file for file in file_names if not os.path.isfile(file)]
+        for file in missing_files:
+            print(f'No .xdmf file found for {file}')
+
+        if existing_files:
+            arrays, grid_info_cur = ut.read_xdmf_extract_numpy_arrays(file_names)
+
+            if arrays:
+                # Store arrays with timestep prefix
+                key_arrays = {f"{key}": value for key, value in arrays.items()}
+                visu_data.update(key_arrays)
+                
+                # Store grid info (should be same for all timesteps)
+                if not grid_info and grid_info_cur:
+                    grid_info = grid_info_cur
+                
+                print(f"\nSuccessfully extracted {len(arrays)} arrays from case {case}, timestep {timestep}")
+            else:
+                print(f"No arrays extracted from timestep {timestep}")
         else:
-            print(f"No arrays extracted from timestep {timestep}")
+            continue
 
 if visu_data:
     ut.reader_output_summary(visu_data)
