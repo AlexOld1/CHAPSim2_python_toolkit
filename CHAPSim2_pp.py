@@ -133,7 +133,7 @@ for case in cases:
         for quantity in quantities:
             key = (case, quantity, timestep)
             file_path = ut.data_filepath(folder_path, case, quantity, timestep)
-            file_exists = ut.check_file_exists(file_path)
+            file_exists = os.path.isfile(file_path)
             if file_exists:
                 data = ut.load_ts_avg_data(file_path)
                 if data is not None:
@@ -194,8 +194,7 @@ if visu_data:
              print(f"{key}: {value}")
 
     # PRint Array Extraction info
-    print(f"\nTotal arrays extracted: {len(visu_data)}")
-                
+    print(f"\nTotal arrays extracted: {len(visu_data)}")                
 else:
     print("No arrays were successfully extracted.")
 

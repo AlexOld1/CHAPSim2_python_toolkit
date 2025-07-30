@@ -135,31 +135,6 @@ def get_vtk_arrays_with_numpy(dataset, file_type="", grid_info=None):
     """
     arrays = {}
     
-    # Process Point Data
-    if dataset.GetPointData() and dataset.GetPointData().GetNumberOfArrays() > 0:
-        print(f"\nPoint Data Arrays ({file_type}):")
-        for i in range(dataset.GetPointData().GetNumberOfArrays()):
-            array = dataset.GetPointData().GetArray(i)
-            name = array.GetName()
-            numpy_array = vtk_to_numpy(array)
-            
-            # Reshape to 3D if grid info available
-            if grid_info and 'node_dimensions' in grid_info:
-                try:
-                    dims = grid_info['node_dimensions']
-                    if numpy_array.size == dims[0] * dims[1] * dims[2]:
-                        numpy_array = numpy_array.reshape(dims[2], dims[1], dims[0])  # VTK uses different ordering
-                        print(f"  {name}: Shape - {numpy_array.shape} (3D), Type - {numpy_array.dtype}")
-                    else:
-                        print(f"  {name}: Shape - {numpy_array.shape} (1D - size mismatch), Type - {numpy_array.dtype}")
-                except:
-                    print(f"  {name}: Shape - {numpy_array.shape} (1D - reshape failed), Type - {numpy_array.dtype}")
-            else:
-                print(f"  {name}: Shape - {numpy_array.shape} (1D), Type - {numpy_array.dtype}")
-            
-            key = f"{file_type}_point_{name}" if file_type else f"point_{name}"
-            arrays[key] = numpy_array
-    
     # Process Cell Data
     if dataset.GetCellData() and dataset.GetCellData().GetNumberOfArrays() > 0:
         print(f"\nCell Data Arrays ({file_type}):")
@@ -184,50 +159,6 @@ def get_vtk_arrays_with_numpy(dataset, file_type="", grid_info=None):
             
             key = f"{file_type}_cell_{name}" if file_type else f"cell_{name}"
             arrays[key] = numpy_array
-    
-    # Extract geometry coordinates
-    try:
-        if hasattr(dataset, 'GetPoints') and dataset.GetPoints() is not None:
-            points = dataset.GetPoints()
-            points_array = vtk_to_numpy(points.GetData())
-            
-            # Try to reshape coordinates to 3D grid
-            if grid_info and 'node_dimensions' in grid_info:
-                try:
-                    dims = grid_info['node_dimensions']
-                    if points_array.shape[0] == dims[0] * dims[1] * dims[2]:
-                        # Separate x, y, z coordinates and reshape each
-                        x_coords = points_array[:, 0].reshape(dims[2], dims[1], dims[0])
-                        y_coords = points_array[:, 1].reshape(dims[2], dims[1], dims[0])
-                        z_coords = points_array[:, 2].reshape(dims[2], dims[1], dims[0])
-                        
-                        key_prefix = f"{file_type}_geometry" if file_type else "geometry"
-                        arrays[f"{key_prefix}_x"] = x_coords
-                        arrays[f"{key_prefix}_y"] = y_coords
-                        arrays[f"{key_prefix}_z"] = z_coords
-                        
-                        print(f"\nGeometry Coordinates: X, Y, Z each with shape {x_coords.shape} (3D)")
-                    else:
-                        key = f"{file_type}_geometry_points" if file_type else "geometry_points"
-                        arrays[key] = points_array
-                        print(f"\nGeometry Points: Shape - {points_array.shape} (1D)")
-                except Exception as reshape_error:
-                    key = f"{file_type}_geometry_points" if file_type else "geometry_points"
-                    arrays[key] = points_array
-                    print(f"\nGeometry Points: Shape - {points_array.shape} (reshape failed: {str(reshape_error)})")
-            else:
-                key = f"{file_type}_geometry_points" if file_type else "geometry_points"
-                arrays[key] = points_array
-                print(f"\nGeometry Points: Shape - {points_array.shape}")
-                
-    except Exception as e:
-        print(f"Could not extract geometry points: {str(e)}")
-        # Try alternative method for geometry
-        try:
-            if hasattr(dataset, 'GetNumberOfPoints') and dataset.GetNumberOfPoints() > 0:
-                print(f"Dataset has {dataset.GetNumberOfPoints()} points but could not extract coordinates")
-        except:
-            pass
     
     return arrays
 
