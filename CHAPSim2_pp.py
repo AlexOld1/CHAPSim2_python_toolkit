@@ -19,12 +19,12 @@ import utils as ut
 
 # Define input cases ----------------------------------------------------------------------------------------------------------------------------------
 
-folder_path = '/home/alex/Sim_Results/mhd_channel_validation/mhd_validation_cases_b5/' # see below for expected file structure
-cases = ['Ha_4', 'Ha_6']
-timesteps = ['358000','385000']
+folder_path = '/home/alex/Sim_Results/mesh_con_Ha_30/' # see below for expected file structure
+cases = ['10_pts', '20_pts', '25_pts', '30_pts'] # case names must match folder names exactly
+timesteps = ['300000']
 quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr'] # for time & space averaged files
 
-Re = ['2305', '2355'] # indexing matches 'cases' if different Re used
+Re = ['5000'] # indexing matches 'cases' if different Re used
 
 # Output ----------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -36,9 +36,9 @@ w_prime_sq_on = True
 v_prime_sq_on = True
 
 # 3D visualisation (under construction)
-visualisation_on = True
+visualisation_on = False
 
-instant_ux_on = True
+instant_ux_on = False
 instant_uy_on = False
 instant_uz_on = False
 instant_press_on = False
@@ -62,8 +62,8 @@ linear_y_scale = True
 log_y_scale = False
 set_y_plus_scaling = False
 y_plus_scale_value = 153
-multi_plot = True
-display_fig = False
+multi_plot = False
+display_fig = True
 save_fig = True
 
 # reference data options
@@ -150,39 +150,40 @@ visu_data = {}
 visu_data.clear()
 grid_info = {}
 
-for case in cases:
-    for timestep in timesteps:
+if visualisation_on:
+    for case in cases:
+        for timestep in timesteps:
 
-        print(f"\n{'-'*60}")
-        print(f"Processing: {case}, {timestep}")
-        print(f"{'-'*60}")
+            print(f"\n{'-'*60}")
+            print(f"Processing: {case}, {timestep}")
+            print(f"{'-'*60}")
 
-        file_names = ut.visu_file_paths(folder_path, case, timestep)
+            file_names = ut.visu_file_paths(folder_path, case, timestep)
 
-        existing_files = [file for file in file_names if os.path.isfile(file)]
-        missing_files = [file for file in file_names if not os.path.isfile(file)]
-        for file in missing_files:
-            print(f'No .xdmf file found for {file}')
+            existing_files = [file for file in file_names if os.path.isfile(file)]
+            missing_files = [file for file in file_names if not os.path.isfile(file)]
+            for file in missing_files:
+                print(f'No .xdmf file found for {file}')
 
-        if existing_files:
-            arrays, grid_info_cur = ut.read_xdmf_extract_numpy_arrays(file_names)
+            if existing_files:
+                arrays, grid_info_cur = ut.read_xdmf_extract_numpy_arrays(file_names)
 
-            if arrays:
-                # Store arrays with timestep prefix
-                key_arrays = {f"{key}": value for key, value in arrays.items()}
-                visu_data.update(key_arrays)
-                
-                # Store grid info (should be same for all timesteps)
-                if not grid_info and grid_info_cur:
-                    grid_info = grid_info_cur
-                
-                print(f"\nSuccessfully extracted {len(arrays)} arrays from case {case}, timestep {timestep}")
+                if arrays:
+                    # Store arrays with timestep prefix
+                    key_arrays = {f"{key}": value for key, value in arrays.items()}
+                    visu_data.update(key_arrays)
+                    
+                    # Store grid info (should be same for all timesteps)
+                    if not grid_info and grid_info_cur:
+                        grid_info = grid_info_cur
+                    
+                    print(f"\nSuccessfully extracted {len(arrays)} arrays from case {case}, timestep {timestep}")
+                else:
+                    print(f"No arrays extracted from timestep {timestep}")
             else:
-                print(f"No arrays extracted from timestep {timestep}")
-        else:
-            continue
+                continue
 
-if visu_data:
+if visu_data and visualisation_on:
     ut.reader_output_summary(visu_data)
         
     # Print grid information
@@ -413,9 +414,9 @@ for turb_stat, stat_dict in all_turb_stats.items():
 
 # =====================================================================================================================================================
 
-# Plot ------------------------------------------------------------------------------------------------------------------------------------------------
+# 2D Plot ---------------------------------------------------------------------------------------------------------------------------------------------
 
-colours_H4 = {
+colours_1 = {
     'ux_velocity' : 'b',
     'u_prime_sq' : 'r',
     'u_prime_v_prime' : 'g',
@@ -423,13 +424,31 @@ colours_H4 = {
     'v_prime_sq' : 'm',
 }
 
-colours_H6 = {
+colours_2 = {
     'ux_velocity' : 'r',
     'u_prime_sq' : 'orange',
     'u_prime_v_prime' : 'lime',
     'w_prime_sq' : 'b',
     'v_prime_sq' : 'purple',
 }
+
+colours_3 = {
+    'ux_velocity' : 'indigo',
+    'u_prime_sq' : 'maroon',
+    'u_prime_v_prime' : 'olive',
+    'w_prime_sq' : 'navy',
+    'v_prime_sq' : 'deeppink',
+}
+
+colours_4 = {
+    'ux_velocity' : 'magenta',
+    'u_prime_sq' : 'peru',
+    'u_prime_v_prime' : 'lightgreen',
+    'w_prime_sq' : 'teal',
+    'v_prime_sq' : 'indigo',
+}
+
+colours = (colours_1, colours_2, colours_3, colours_4)
 
 stat_labels = {
     "ux_velocity" : "Streamwise Velocity",
@@ -458,22 +477,26 @@ if len(turb_stats_norm) == 1 or multi_plot == False: # creates a single plot for
                 # Plot current data
                 label = f'{stat_labels[stat_name]}, {case.replace('_', ' = ')}'
 
-                if case == 'Ha_4':
-                    line_colour = colours_H4[stat_name]
-                elif case == 'Ha_6':
-                    line_colour = colours_H6[stat_name]
+                # Choose color based on case
+                if len(cases) <= len(colours):
+                    colour_set = op.get_col(case, cases, colours)
+                    line_colour = colour_set[stat_name]
                 else:
-                    continue
+                    line_colour = list(np.random.choice(range(256), size=3))  # Default colour
 
                 if linear_y_scale:
                     plt.plot(y_plus, values, label=label, linestyle='-', marker='', color=line_colour)
 
                     # plot reference data
-                    if mhd_NK_ref_on:
-                        plt.plot(ref_y_H4, NK_H4_ref_stats[stat_name], linestyle='', label=f'{stat_labels[stat_name]}, Ha = 4, Noguchi & Kasagi',
-                                 marker='o', color=colours_H4[stat_name], markevery=2)
-                        plt.plot(ref_y_H6, NK_H6_ref_stats[stat_name], linestyle='', label=f'{stat_labels[stat_name]}, Ha = 6, Noguchi & Kasagi',
-                                 marker='o', color=colours_H6[stat_name], markevery=2)
+                    if mhd_NK_ref_on and stat_name in NK_H4_ref_stats:
+                        if case == 'Ha_4':
+                            plt.plot(ref_y_H4, NK_H4_ref_stats[stat_name], linestyle='', 
+                                   label=f'Ha = 4, Noguchi & Kasagi',
+                                   marker='o', color=colours_1[stat_name], markevery=2)
+                        elif case == 'Ha_6':
+                            plt.plot(ref_y_H6, NK_H6_ref_stats[stat_name], linestyle='', 
+                                   label=f'Ha = 6, Noguchi & Kasagi',
+                                   marker='o', color=colours_2[stat_name], markevery=2)
                         
                     if mhd_XCompact_ref_on:
                         plt.okt(ref_yplus_uu_H6, xcomp_H6_stats[stat_name], linestyle='', label='XCompact3D, Ha = 6', marker='s')
@@ -483,14 +506,18 @@ if len(turb_stats_norm) == 1 or multi_plot == False: # creates a single plot for
                 
                 elif log_y_scale:
                     
-                    plt.semilogx(y_plus, values, label=label, linestyle='-', marker='')
+                    plt.semilogx(y_plus, values, label=label, linestyle='-', marker='', color=line_colour)
 
                     # plot reference data
-                    if mhd_NK_ref_on:
-                        plt.semilogx(ref_y_H4, NK_H4_ref_stats[stat_name], linestyle='', label=f'{stat_labels[stat_name]}, Ha = 4, Noguchi & Kasagi',
-                                 marker='o', color=colours_H4[stat_name], markevery=2)
-                        plt.semilogx(ref_y_H6, NK_H6_ref_stats[stat_name], linestyle='', label=f'{stat_labels[stat_name]}, Ha = 6, Noguchi & Kasagi',
-                                 marker='o', color=colours_H6[stat_name], markevery=2)
+                    if mhd_NK_ref_on and stat_name in NK_H4_ref_stats:
+                        if case == 'Ha_4':
+                            plt.semilogx(ref_y_H4, NK_H4_ref_stats[stat_name], linestyle='', 
+                                   label=f'Ha = 4, Noguchi & Kasagi',
+                                   marker='o', color=colours_1[stat_name], markevery=2)
+                        elif case == 'Ha_6':
+                            plt.semilogx(ref_y_H6, NK_H6_ref_stats[stat_name], linestyle='', 
+                                   label=f'Ha = 6, Noguchi & Kasagi',
+                                   marker='o', color=colours_2[stat_name], markevery=2)
                         
                     if mhd_XCompact_ref_on:
                         plt.semilogx(ref_yplus_uu_H6, xcomp_H6_stats[stat_name], linestyle='', label='XCompact3D, Ha = 6', marker='s')
@@ -555,15 +582,14 @@ elif len(turb_stats_norm) > 1 and multi_plot == True: # creates a different plot
                     y_plus = op.norm_y_to_y_plus(y, ux_data, cur_Re)
 
                 # Plot current data
-                label = f'{case.replace("_", " = ")}, t={timestep}'
+                label = f'{case.replace("_", " = ")}'
                 
                 # Choose color based on case
-                if case == 'Ha_4':
-                    line_colour = colours_H4[stat_name]
-                elif case == 'Ha_6':
-                    line_colour = colours_H6[stat_name]
+                if len(cases) <= len(colours):
+                    colour_set = op.get_col(case, cases, colours)
+                    line_colour = colour_set[stat_name]
                 else:
-                    line_colour = 'black'  # Default colour
+                    line_colour = list(np.random.choice(range(256), size=3))  # Default colour
 
                 if linear_y_scale:
                     ax.plot(y_plus, values, label=label, linestyle='-', marker='', color=line_colour)
@@ -573,11 +599,11 @@ elif len(turb_stats_norm) > 1 and multi_plot == True: # creates a different plot
                         if case == 'Ha_4':
                             ax.plot(ref_y_H4, NK_H4_ref_stats[stat_name], linestyle='', 
                                    label=f'Ha = 4, Noguchi & Kasagi',
-                                   marker='o', color=colours_H4[stat_name], markevery=2)
+                                   marker='o', color=colours_1[stat_name], markevery=2)
                         elif case == 'Ha_6':
                             ax.plot(ref_y_H6, NK_H6_ref_stats[stat_name], linestyle='', 
                                    label=f'Ha = 6, Noguchi & Kasagi',
-                                   marker='o', color=colours_H6[stat_name], markevery=2)
+                                   marker='o', color=colours_2[stat_name], markevery=2)
                         
                     if mhd_XCompact_ref_on and stat_name in xcomp_H6_stats:
                         ax.plot(ref_yplus_uu_H6, xcomp_H6_stats[stat_name], linestyle='', 
@@ -595,11 +621,11 @@ elif len(turb_stats_norm) > 1 and multi_plot == True: # creates a different plot
                         if case == 'Ha_4':
                             ax.semilogx(ref_y_H4, NK_H4_ref_stats[stat_name], linestyle='', 
                                        label=f'Ha = 4, Noguchi & Kasagi',
-                                       marker='o', color=colours_H4[stat_name], markevery=2)
+                                       marker='o', color=colours_1[stat_name], markevery=2)
                         elif case == 'Ha_6':
                             ax.semilogx(ref_y_H6, NK_H6_ref_stats[stat_name], linestyle='', 
                                        label=f'Ha = 6, Noguchi & Kasagi',
-                                       marker='o', color=colours_H6[stat_name], markevery=2)
+                                       marker='o', color=colours_2[stat_name], markevery=2)
                         
                     if mhd_XCompact_ref_on and stat_name in xcomp_H6_stats:
                         ax.semilogx(ref_yplus_uu_H6, xcomp_H6_stats[stat_name], linestyle='', 
@@ -641,7 +667,7 @@ if display_fig or save_fig:
     current_fig = plt.gcf()
     
     if display_fig and not save_fig:
-        plt.show()
+        plt.show(current_fig)
 
     elif save_fig and not display_fig:
         current_fig.savefig('plot.png',
@@ -665,4 +691,4 @@ elif display_fig and save_fig:
         orientation='landscape') 
     plt.show
 else:
-    print('No output option selected')      
+    print('No 2D output option selected')

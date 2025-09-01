@@ -178,22 +178,15 @@ def reader_output_summary(arrays_dict):
         print(f"  Shape: {array.shape},  Min value: {np.min(array):.6e},  Max value: {np.max(array):.6e}   Mean value: {np.mean(array):.6e}")
         print("-" * 40)
 
-def visualise_domain_var(output, visu_arrays_dic):
+def visualise_domain_var(output, flow_var):
     pv_mesh = pv.wrap(output)
 
     if pv_mesh:
-                # Let's assume you want to plot the 'qx_velocity' cell data
-                    if "cell_data_qx_velocity" in visu_arrays_dic:
-                        qx_velocity = visu_arrays_dic["cell_data_qx_velocity"]
 
-                        # Add the NumPy array as cell data to the PyVista mesh
-                        pv_mesh.cell_data["qx_velocity"] = qx_velocity
+        pv_mesh.cell_data[flow_var] = flow_var
+        plotter = pv.Plotter()
+        plotter.add_mesh(pv_mesh, scalars="qx_velocity", show_edges=True, cmap="viridis")
+        plotter.show()
 
-                        # Plot the mesh, coloring by the 'qx_velocity' cell data
-                        plotter = pv.Plotter()
-                        plotter.add_mesh(pv_mesh, scalars="qx_velocity", show_edges=True, cmap="viridis")
-                        plotter.show()
-                    else:
-                        print("Error: 'cell_data_qx_velocity' not found in the extracted arrays.")
     else:
                     print("Error: Could not wrap VTK output to PyVista mesh.")

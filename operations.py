@@ -1,10 +1,10 @@
 import numpy as np
 
 def get_Re(case, cases, Re):
-    if len(Re) > 1:
+    if not int and len(Re) > 1:
         cur_Re = Re[cases.index(case)]
     else:
-        cur_Re = Re
+        cur_Re = Re[0]
     return cur_Re
 
 def read_velocity_profile(ux):
@@ -46,7 +46,8 @@ def norm_turb_stat_wrt_u_tau_sq(ux_data, turb_stat, Re_bulk):
     tau_w = dudy/Re_bulk
     u_tau_sq = abs(tau_w)
     u_tau = np.sqrt(u_tau_sq)
-    print(f'u_tau = {u_tau}, tau_w = {tau_w}')
+    Re_tau = u_tau * Re_bulk
+    print(f'u_tau = {u_tau}, tau_w = {tau_w}, Re_tau = {Re_tau}')
 
     turb_stat = np.asarray(turb_stat)
     return np.divide(turb_stat, u_tau_sq)
@@ -130,5 +131,12 @@ def compute_vorticity_omega_z(uy, ux, x, y):
     omega_z = duydx - duxdy
 
     return omega_z
+
+def get_col(case, cases, colours):
+    if len(cases) > 1:
+        colour = colours[cases.index(case)]
+    else:
+        colour = colours[0]
+    return colour
 
 # lamda2 and q criterion next
