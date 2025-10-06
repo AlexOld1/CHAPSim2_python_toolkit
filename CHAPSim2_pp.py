@@ -7,7 +7,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-import pyvista as pv
 import os
 
 # import modules --------------------------------------------------------------------------------------------------------------------------------------
@@ -16,66 +15,25 @@ import operations as op
 import utils as ut
 
 # =====================================================================================================================================================
+from config import *
 
-# Define input cases ----------------------------------------------------------------------------------------------------------------------------------
-
-folder_path = '/home/alex/Sim_Results/mesh_con_Ha_30/' # see below for expected file structure
-cases = ['10_pts', '20_pts', '25_pts', '30_pts'] # case names must match folder names exactly
-timesteps = ['300000']
-quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr'] # for time & space averaged files
-
-Re = ['5000'] # indexing matches 'cases' if different Re used
-
-# Output ----------------------------------------------------------------------------------------------------------------------------------------------
-
-# velocity profiles & first order statistics
-ux_velocity_on = False
-u_prime_sq_on = True
-u_prime_v_prime_on = True
-w_prime_sq_on = True
-v_prime_sq_on = True
+# Input parameters in development
 
 # 3D visualisation (under construction)
 visualisation_on = False
 
-instant_ux_on = False
-instant_uy_on = False
-instant_uz_on = False
-instant_press_on = False
-instant_phi_on = False
-
-# Processing options ----------------------------------------------------------------------------------------------------------------------------------
-
-# averaging (1D data)
-symmetric_average_on = True
-window_average_on = False
-window_average_val_lower_bound = 180000 # this doesn't work right now
-stat_start_timestep = 180000
-
-# normalisation (1D data)
-norm_by_u_tau_sq = True
-norm_ux_by_u_tau = True
-
-# Plotting options ------------------------------------------------------------------------------------------------------------------------------------
-
-linear_y_scale = True
-log_y_scale = False
-set_y_plus_scaling = False
-y_plus_scale_value = 153
-multi_plot = False
-display_fig = True
-save_fig = True
-
-# reference data options
-ux_velocity_log_ref_on = True
-mhd_NK_ref_on = True
-mhd_XCompact_ref_on = False
-mkm180_ch_ref_on = False
+#instant_ux_on = False
+#instant_uy_on = False
+#instant_uz_on = False
+#instant_press_on = False
+#instant_phi_on = False
 
 # analytical input -- currently doesn't work
-Analytical_lam_mhd_on = False
-Analytical_lam_Ha = [4.0, 6.0, 8.0]
-Ana_Re_tau = 150
+# Analytical_lam_mhd_on = False
+# Analytical_lam_Ha = [4.0, 6.0, 8.0]
+# Ana_Re_tau = 150
+
+# =====================================================================================================================================================
 
 # Define file paths -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -134,6 +92,7 @@ for case in cases:
             key = (case, quantity, timestep)
             file_path = ut.data_filepath(folder_path, case, quantity, timestep)
             file_exists = os.path.isfile(file_path)
+            print (f"Looking for files in: {file_path}")
             if file_exists:
                 data = ut.load_ts_avg_data(file_path)
                 if data is not None:
@@ -340,17 +299,17 @@ if mhd_XCompact_ref_on:
 
 # not currently working
 
-Ana_lam_Ha_prof = {}
-Ana_lam_Ha_prof.clear()  # Clear any existing keys
+#Ana_lam_Ha_prof = {}
+#Ana_lam_Ha_prof.clear()  # Clear any existing keys
 
-if Analytical_lam_mhd_on:
-    for case in Analytical_lam_Ha:
-
-        Re_bulk = op.get_Re(case, cases, Re)
-        Ana_lam_Ha_prof[case] = op.analytical_laminar_mhd_prof(case, Re_bulk, Ana_Re_tau)
-        print(f'Calculated analytical laminar profile for case = {case}')
-else:
-    print(f'Analytical MHD laminar profile calculation is disabled or required data is missing.')
+#if Analytical_lam_mhd_on:
+#    for case in Analytical_lam_Ha:
+#
+#        Re_bulk = op.get_Re(case, cases, Re)
+#        Ana_lam_Ha_prof[case] = op.analytical_laminar_mhd_prof(case, Re_bulk, Ana_Re_tau)
+#        print(f'Calculated analytical laminar profile for case = {case}')
+#else:
+#    print(f'Analytical MHD laminar profile calculation is disabled or required data is missing.')
 
 # Normalise Quantities with respect to u_tau squared and average symmetrically ------------------------------------------------------------------------
 
@@ -448,7 +407,15 @@ colours_4 = {
     'v_prime_sq' : 'indigo',
 }
 
-colours = (colours_1, colours_2, colours_3, colours_4)
+colours_blck = {
+    'ux_velocity' : 'black',
+    'u_prime_sq' : 'black',
+    'u_prime_v_prime' : 'black',
+    'w_prime_sq' : 'black',
+    'v_prime_sq' : 'black',
+}
+
+colours = ( colours_blck,colours_1, colours_2, colours_3, colours_4)
 
 stat_labels = {
     "ux_velocity" : "Streamwise Velocity",
@@ -667,9 +634,11 @@ if display_fig or save_fig:
     current_fig = plt.gcf()
     
     if display_fig and not save_fig:
-        plt.show(current_fig)
+        print('Displaying figure...')
+        plt.show()
 
     elif save_fig and not display_fig:
+        print('Saving figure as plot.png...')
         current_fig.savefig('plot.png',
            dpi=300,
            bbox_inches='tight',
@@ -681,6 +650,7 @@ if display_fig or save_fig:
     
 elif display_fig and save_fig:
     current_fig = plt.gcf()
+    print('Displaying and saving figure as plot.png...')
     current_fig.savefig('plot.png',
         dpi=300,
         bbox_inches='tight',
