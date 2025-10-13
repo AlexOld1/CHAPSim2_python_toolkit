@@ -1,11 +1,11 @@
 # Define input cases ----------------------------------------------------------------------------------------------------------------------------------
 
-folder_path = '/home/alex/sim_results/mhd_channel_validation/CMF/' # see below for expected file structure
-cases = ['Ha_6'] # case names must match folder names exactly
-timesteps = ['240000']
+folder_path = '/home/alex/sim_results/mhd_channel_validation/CPG/' # format: folder_path/case/1_data/quantity_timestep.dat
+cases = ['Ha_4'] # case names must match folder names exactly
+timesteps = ['214000']
 quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr'] # for time & space averaged files
 
-Re = ['2355'] # indexing matches 'cases' if different Re used
+Re = ['2305'] # indexing matches 'cases' if different Re used
 
 # Output ----------------------------------------------------------------------------------------------------------------------------------------------
 

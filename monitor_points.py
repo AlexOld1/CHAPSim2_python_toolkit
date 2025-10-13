@@ -1,11 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-path = '/home/alex/sim_results/mesh_con_Ha_30/30_pts/3_monitor/'
+# ====================================================================================================================================================
+# Input parameters
+# ====================================================================================================================================================
+
+path = '/home/alex/sim_results/mesh_con_Ha_30/30_pts/3_monitor/3_monitor/'
+#path = '/home/alex/sim_results/mhd_channel_validation/CPG/Ha_6/3_monitor/'
 files = ['domain1_monitor_pt1_flow.dat','domain1_monitor_pt3_flow.dat','domain1_monitor_pt5_flow.dat',
          'domain1_monitor_pt2_flow.dat','domain1_monitor_pt4_flow.dat']
 
-import numpy as np
+# ====================================================================================================================================================
 
 def clean_dat_file(input_file, output_file, expected_cols=6):
     clean_data = []

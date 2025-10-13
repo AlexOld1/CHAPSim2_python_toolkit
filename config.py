@@ -1,8 +1,8 @@
 # Define input cases ----------------------------------------------------------------------------------------------------------------------------------
 
 folder_path = '/home/alex/sim_results/mesh_con_Ha_30/' # see below for expected file structure
-cases = ['20_pts','25_pts','30_pts'] # case names must match folder names exactly
-timesteps = ['232000','240000','300000'] # add auto setting to default to latest timestep or conv setting to compare all
+cases = ['10_pts','20_pts','25_pts','30_pts'] # case names must match folder names exactly
+timesteps = ['232000','240000','340000'] # add auto setting to default to latest timestep or conv setting to compare all
 quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr'] # for time & space averaged files
 
 Re = ['5000'] # indexing matches 'cases' if different Re used
@@ -11,7 +11,7 @@ Re = ['5000'] # indexing matches 'cases' if different Re used
 
 # velocity profiles & first order statistics
 ux_velocity_on = True
-u_prime_sq_on = True
+u_prime_sq_on = False
 u_prime_v_prime_on = False
 w_prime_sq_on = False
 v_prime_sq_on = False
