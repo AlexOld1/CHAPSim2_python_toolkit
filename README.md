@@ -1,2 +1,2 @@
 # CHAPSim2_post_process
-A python post-processing program based on NumPy, Matplotlib and PyVista for DNS solver CHAPSim2.
+A python post-processing and toolkit program based on NumPy, Matplotlib and PyVista for DNS solver CHAPSim2.
