@@ -11,7 +11,6 @@ class LiquidLithiumProperties:
     """
     
     def __init__(self):
-        self.T_ref = 453.65  # K, reference temperature (melting point)
         self.T_melt = 453.65  # K, melting point
         self.T_boil = 1615.0  # K, boiling point at 1 atm
         self.M = 6.9410  # g/mol, molar mass of Li
@@ -108,7 +107,7 @@ class LiquidLithiumProperties:
         """Thermal conductivity in W/(m·K)"""
         return 22.28 + 0.05 * T - 0.00001243 * T**2  # W/(m·K)
 
-def generate_property_table(T_min, T_max, pressure=0.1, n_points=20, 
+def generate_property_table(T_min, T_max, T_ref, pressure=0.1, n_points=20, 
                            save_csv=False, filename='lithium_properties.csv'):
     """
     Generate a property table for liquid lithium over a temperature range.
@@ -119,6 +118,8 @@ def generate_property_table(T_min, T_max, pressure=0.1, n_points=20,
         Minimum temperature in K
     T_max : float
         Maximum temperature in K
+    T_ref : float
+        Reference temperature for enthalpy and entropy calculations
     pressure : float
         Pressure in MPa (default 0.1 MPa = ~1 atm)
     n_points : int
@@ -151,9 +152,9 @@ def generate_property_table(T_min, T_max, pressure=0.1, n_points=20,
         'Pressure (MPa)': [pressure] * n_points,
         'Density (mol/l)': [li.density_molar(T) for T in T_array],
         'Volume (l/mol)': [li.molar_volume(T) for T in T_array],
-        'Internal Energy (kJ/mol)': [li.internal_energy(T) for T in T_array],
-        'Enthalpy (kJ/mol)': [li.enthalpy(T) for T in T_array],
-        'Entropy (J/mol*K)': [li.entropy(T) for T in T_array],
+        'Internal Energy (kJ/mol)': [li.internal_energy(T, T_ref) for T in T_array],
+        'Enthalpy (kJ/mol)': [li.enthalpy(T, T_ref) for T in T_array],
+        'Entropy (J/mol*K)': [li.entropy(T, T_ref) for T in T_array],
         'Cv (J/mol*K)': [li.heat_capacity_v(T) for T in T_array],
         'Cp (J/mol*K)': [li.heat_capacity_p(T) for T in T_array],
         'Sound Spd. (m/s)': [li.speed_of_sound(T) for T in T_array],
@@ -178,12 +179,13 @@ if __name__ == "__main__":
     T_min = 500  # K
     T_max = 1200  # K
     pressure = 0.1  # MPa
+    T_ref = 500  # Reference temperature for enthalpy calculations
     
     print("Generating liquid lithium property table...")
     print(f"Temperature range: {T_min} K to {T_max} K")
     print(f"Pressure: {pressure} MPa\n")
     
-    table = generate_property_table(T_min, T_max, pressure=pressure, 
+    table = generate_property_table(T_min, T_max, T_ref, pressure=pressure, 
                                    n_points=15, save_csv=True)
     
     # Display table
@@ -200,7 +202,7 @@ if __name__ == "__main__":
     T = 800
     print(f"Molar density: {li.density_molar(T):.4f} mol/L")
     print(f"Molar volume: {li.molar_volume(T):.4f} L/mol")
-    print(f"Enthalpy: {li.enthalpy(T):.4f} kJ/mol")
+    print(f"Enthalpy: {li.enthalpy(T, T_ref):.4f} kJ/mol")
     print(f"Cp: {li.heat_capacity_p(T):.4f} J/(mol·K)")
     print(f"Viscosity: {li.viscosity(T):.2f} µPa·s")
     print(f"Thermal conductivity: {li.thermal_conductivity(T):.2f} W/(m·K)")
