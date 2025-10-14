@@ -7,13 +7,14 @@ class LiquidLithiumProperties:
     Valid range: Tm (453.65 K) to approximately 1500 K
     
     Note: Pressure effects are neglected for most properties as liquids
-    are nearly incompressible. Properties are primarily temperature-dependent.
+    are assumed incompressible. Properties are primarily temperature-dependent.
     """
     
     def __init__(self):
+        self.T_ref = 453.65  # K, reference temperature (melting point)
         self.T_melt = 453.65  # K, melting point
         self.T_boil = 1615.0  # K, boiling point at 1 atm
-        self.M = 6.94  # g/mol, molar mass of Li
+        self.M = 6.9410  # g/mol, molar mass of Li
         
     def phase(self, T, P):
         """Determine phase based on temperature"""
@@ -26,7 +27,7 @@ class LiquidLithiumProperties:
     
     def density_mass(self, T):
         """Mass density in kg/m³"""
-        return 534.3 - 0.1058 * T
+        return 278.5 - 0.04657 * T + 274.6 * (1 - T / 3500)**0.467
     
     def density_molar(self, T):
         """Molar density in mol/L"""
@@ -38,7 +39,7 @@ class LiquidLithiumProperties:
         """Molar volume in L/mol"""
         return 1.0 / self.density_molar(T)
     
-    def internal_energy(self, T, T_ref=453.65):
+    def internal_energy(self, T, T_ref):
         """
         Molar internal energy in kJ/mol relative to reference temperature.
         For liquids: dU ≈ Cv*dT
@@ -47,17 +48,14 @@ class LiquidLithiumProperties:
         U = Cv * (T - T_ref) / 1000  # kJ/mol
         return U
     
-    def enthalpy(self, T, T_ref=453.65):
+    def enthalpy(self, T, T_ref):
         """
-        Molar enthalpy in kJ/mol relative to reference temperature.
-        H = U + PV, but for liquids PV term is small
+        delta H = int(Cp dT) from T_ref to T
         """
-        U = self.internal_energy(T, T_ref)
-        # PV term is typically negligible for liquids
-        # Approximation: H ≈ U + small correction
-        return U * 1.005  # Approximate correction factor
+
+        return (4754 * (T - T_ref) - (0.925 * (T**2 - T_ref**2)) / 2 + (0.000291 * (T**3 - T_ref**3)) / 3) / 1000  # kJ/mol
     
-    def entropy(self, T, T_ref=453.65):
+    def entropy(self, T, T_ref):
         """
         Molar entropy in J/(mol·K) relative to reference temperature.
         dS = Cp/T * dT for constant pressure
@@ -71,7 +69,7 @@ class LiquidLithiumProperties:
     
     def heat_capacity_p(self, T):
         """Molar heat capacity at constant pressure Cp in J/(mol·K)"""
-        Cp_mass = 4190.0  # J/(kg·K)
+        Cp_mass = 4754 - 0.925 * T + 0.000291 * T**2  # J/(kg·K)
         Cp_molar = Cp_mass * self.M / 1000  # J/(mol·K)
         return Cp_molar
     
@@ -103,13 +101,12 @@ class LiquidLithiumProperties:
     
     def viscosity(self, T):
         """Dynamic viscosity in µPa·s"""
-        mu_Pa_s = 4.64e-4 * np.exp(590.0 / T)  # Pa·s
+        mu_Pa_s = np.exp(-4.164 - 0.6374 * np.log(T) + (292.1 / T))  # Pa·s
         return mu_Pa_s * 1e6  # Convert to µPa·s
     
     def thermal_conductivity(self, T):
         """Thermal conductivity in W/(m·K)"""
-        return 40.58 + 0.01067 * T
-
+        return 22.28 + 0.05 * T - 0.00001243 * T**2  # W/(m·K)
 
 def generate_property_table(T_min, T_max, pressure=0.1, n_points=20, 
                            save_csv=False, filename='lithium_properties.csv'):
@@ -175,8 +172,7 @@ def generate_property_table(T_min, T_max, pressure=0.1, n_points=20,
     
     return df
 
-
-# Example usage
+# usage
 if __name__ == "__main__":
     # Generate table from melting point to 1200 K
     T_min = 500  # K
