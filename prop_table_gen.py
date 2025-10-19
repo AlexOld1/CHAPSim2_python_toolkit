@@ -8,6 +8,13 @@ class LiquidLithiumProperties:
     
     Note: Pressure effects are neglected for most properties as liquids
     are assumed incompressible. Properties are primarily temperature-dependent.
+    No functions are given for properties irrelevant to CHAPSim2.
+
+    References:
+    - R.W. Ohse (Ed.) Handbook of Thermodynamic and Transport Properties of Alkali Metals, 
+    Intern. Union of Pure and Applied Chemistry Chemical Data Series No. 30. Oxford: Blackwell Scientific Publ., 1985, pp. 987. 
+    (All properties except Cp)
+    - C.B. Alcock, M.W. Chase, V.P. Itkin, J. Phys. Chem. Ref. Data 23 (1994) 385. (Cp)
     """
     
     def __init__(self):
@@ -108,7 +115,7 @@ class LiquidLithiumProperties:
         return 22.28 + 0.05 * T - 0.00001243 * T**2  # W/(m·K)
 
 def generate_property_table(T_min, T_max, T_ref, pressure=0.1, n_points=20, 
-                           save_csv=False, filename='lithium_properties.csv'):
+                           save_tsv=False, filename='lithium_properties.tsv'):
     """
     Generate a property table for liquid lithium over a temperature range.
     
@@ -124,10 +131,10 @@ def generate_property_table(T_min, T_max, T_ref, pressure=0.1, n_points=20,
         Pressure in MPa (default 0.1 MPa = ~1 atm)
     n_points : int
         Number of temperature points
-    save_csv : bool
+    save_tsv : bool
         Whether to save the table as CSV
     filename : str
-        Output filename if save_csv=True
+        Output filename if save_tsv=True
     
     Returns:
     --------
@@ -167,8 +174,8 @@ def generate_property_table(T_min, T_max, T_ref, pressure=0.1, n_points=20,
     df = pd.DataFrame(data)
     
     # Save if requested
-    if save_csv:
-        df.to_csv(filename, index=False)
+    if save_tsv:
+        df.to_csv(filename, sep='\t', index=False)
         print(f"Property table saved to {filename}")
     
     return df
@@ -176,17 +183,17 @@ def generate_property_table(T_min, T_max, T_ref, pressure=0.1, n_points=20,
 # usage
 if __name__ == "__main__":
     # Generate table from melting point to 1200 K
-    T_min = 500  # K
-    T_max = 1200  # K
+    T_min = 455  # K
+    T_max = 1600  # K
     pressure = 0.1  # MPa
-    T_ref = 500  # Reference temperature for enthalpy calculations
+    T_ref = 650  # Reference temperature for enthalpy calculations
     
     print("Generating liquid lithium property table...")
     print(f"Temperature range: {T_min} K to {T_max} K")
     print(f"Pressure: {pressure} MPa\n")
     
     table = generate_property_table(T_min, T_max, T_ref, pressure=pressure, 
-                                   n_points=15, save_csv=True)
+                                   n_points=12000, save_tsv=True)
     
     # Display table
     pd.set_option('display.max_columns', None)
