@@ -37,6 +37,9 @@ def compute_v_prime_sq(uy, vv):
 
     return vv_col - np.square(uy_col)
 
+def compute_tke(u_prime_sq, v_prime_sq, w_prime_sq):
+    return 0.5 * (u_prime_sq + v_prime_sq + w_prime_sq)
+
 def print_flow_info(ux_data, Re_bulk, case, timestep):
     Re_bulk = int(Re_bulk)
     du = ux_data[0, 2] - ux_data[1, 2]

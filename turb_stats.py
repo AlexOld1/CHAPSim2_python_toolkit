@@ -37,6 +37,7 @@ class Config:
     u_prime_v_prime_on: bool
     w_prime_sq_on: bool
     v_prime_sq_on: bool
+    tke_on: bool
 
     # Processing options
     symmetric_average_on: bool
@@ -78,6 +79,7 @@ class Config:
             u_prime_v_prime_on=config_module.u_prime_v_prime_on,
             w_prime_sq_on=config_module.w_prime_sq_on,
             v_prime_sq_on=config_module.v_prime_sq_on,
+            tke_on=config_module.tke_on,
             symmetric_average_on=config_module.symmetric_average_on,
             window_average_on=config_module.window_average_on,
             window_average_val_lower_bound=config_module.window_average_val_lower_bound,
@@ -428,6 +430,18 @@ class ReynoldsStressWW(TurbStatistic):
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
         return op.compute_w_prime_sq(data_dict['uz'], data_dict['ww'])
+    
+class TurbulentKineticEnergy(TurbStatistic):
+    """Turbulent Kinetic Energy (TKE)"""
+
+    def __init__(self):
+        super().__init__('TKE', 'k', ['ux', 'uy', 'uz', 'uu', 'vv', 'ww'])
+
+    def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
+        u_prime_sq = op.compute_u_prime_sq(data_dict['ux'], data_dict['uu'])
+        v_prime_sq = op.compute_v_prime_sq(data_dict['uy'], data_dict['vv'])
+        w_prime_sq = op.compute_w_prime_sq(data_dict['uz'], data_dict['ww'])
+        return op.compute_tke(u_prime_sq, v_prime_sq, w_prime_sq)
 
 
 # =====================================================================================================================================================
@@ -459,6 +473,9 @@ class TurbulenceStatsPipeline:
 
         if self.config.w_prime_sq_on:
             self.statistics.append(ReynoldsStressWW())
+
+        if self.config.tke_on:
+            self.statistics.append(TurbulentKineticEnergy())
 
     def compute_all(self) -> None:
         """Compute all registered statistics for all cases and timesteps"""
@@ -730,7 +747,7 @@ class TurbulencePlotter:
 
     def _get_color(self, case: str, stat_name: str) -> str:
         """Get color for a case and statistic"""
-        if len(self.config.cases) <= len(self.plot_config.colors):
+        if len(self.config.cases) <= len(self.plot_config.colors) and stat_name in self.plot_config.stat_labels:
             colour_set = op.get_col(case, self.config.cases, self.plot_config.colors)
             return colour_set[stat_name]
         else:

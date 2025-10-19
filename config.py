@@ -15,6 +15,7 @@ u_prime_sq_on = True
 u_prime_v_prime_on = True
 w_prime_sq_on = True
 v_prime_sq_on = True
+tke_on = True
 
 # Processing options ----------------------------------------------------------------------------------------------------------------------------------
 
