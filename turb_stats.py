@@ -469,6 +469,7 @@ class TurbulenceStatsPipeline:
 
     def process_all(self) -> None:
         """Apply normalization and averaging to all computed statistics"""
+
         for stat in self.statistics:
             for (case, timestep), values in stat.raw_results.items():
 
@@ -495,10 +496,13 @@ class TurbulenceStatsPipeline:
                 if self.config.symmetric_average_on and stat.name != 'u_prime_v_prime':
                     normed_avg = op.symmetric_average(normed)
                     stat.processed_results[(case, timestep)] = normed_avg
-                    print(f'Symmetric averaged data for {case}, {timestep}')
+                    # print(f'Symmetric averaged data for {case}, {timestep}')
                 else:
                     stat.processed_results[(case, timestep)] = normed[:(len(normed)//2)]
-                    print(f'First half extracted for {case}, {timestep}')
+                    #print(f'First half extracted for {case}, {timestep}')
+
+                # Print flow info
+                op.print_flow_info(ux_data, cur_Re, case, timestep)
 
                 # Window averaging (if enabled)
                 if self.config.window_average_on:
@@ -760,9 +764,9 @@ def main():
     import config as config_module
     config = Config.from_module(config_module)
 
-    print("="*80)
+    print("="*85)
     print("TURBULENCE STATISTICS PROCESSING")
-    print("="*80)
+    print("="*85)
 
     # Load turbulence data
     print("\nLoading turbulence data...")
@@ -786,6 +790,7 @@ def main():
 
     # Process statistics (normalize, average)
     print("\nProcessing statistics...")
+    print("\nFlow info:\n")
     pipeline.process_all()
 
     # Plot results
@@ -804,9 +809,9 @@ def main():
     else:
         print('\nNo output option selected')
 
-    print("\n" + "="*80)
+    print("\n" + "="*85)
     print("PROCESSING COMPLETE")
-    print("="*80)
+    print("="*85)
 
 
 if __name__ == '__main__':

@@ -37,6 +37,19 @@ def compute_v_prime_sq(uy, vv):
 
     return vv_col - np.square(uy_col)
 
+def print_flow_info(ux_data, Re_bulk, case, timestep):
+    Re_bulk = int(Re_bulk)
+    du = ux_data[0, 2] - ux_data[1, 2]
+    dy = ux_data[0, 1] - ux_data[1, 1]
+    dudy = du/dy
+    tau_w = dudy/Re_bulk
+    u_tau = np.sqrt(abs(dudy/Re_bulk))
+    Re_tau = u_tau * Re_bulk
+    print(f'Case: {case}, Timestep: {timestep}')
+    print(f'u_tau = {u_tau}, tau_w = {tau_w}, Re_tau = {Re_tau}')
+    print('-'*85)
+    return
+
 def norm_turb_stat_wrt_u_tau_sq(ux_data, turb_stat, Re_bulk):
 
     Re_bulk = int(Re_bulk)
@@ -47,8 +60,6 @@ def norm_turb_stat_wrt_u_tau_sq(ux_data, turb_stat, Re_bulk):
     u_tau_sq = abs(tau_w)
     u_tau = np.sqrt(u_tau_sq)
     Re_tau = u_tau * Re_bulk
-    print(f'u_tau = {u_tau}, tau_w = {tau_w}, Re_tau = {Re_tau}')
-    print('-'*100)
 
     turb_stat = np.asarray(turb_stat)
     return np.divide(turb_stat, u_tau_sq)
