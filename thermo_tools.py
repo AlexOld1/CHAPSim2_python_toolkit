@@ -113,6 +113,10 @@ class LiquidLithiumProperties:
     def thermal_conductivity(self, T):
         """Thermal conductivity in W/(m·K)"""
         return 22.28 + 0.05 * T - 0.00001243 * T**2  # W/(m·K)
+    
+    def coeff_vol_exp(self, T):
+        """Coefficient of volume expansion in 1/K"""
+        return 1 / ( 5620 - T )
 
 def generate_property_table(T_min, T_max, T_ref, pressure=0.1, n_points=20, 
                            save_tsv=False, filename='lithium_properties.tsv'):
@@ -180,8 +184,31 @@ def generate_property_table(T_min, T_max, T_ref, pressure=0.1, n_points=20,
     
     return df
 
+def Grahsof_to_temp_diff(grahsof, beta, L, mu, rho):
+    """
+    Convert Grahsof number to temperature difference in K.
+    
+    Grahsof = g * beta * Delta_T * L^3 / nu^2
+    Delta_T = Grahsof * nu^2 / (g * beta * L^3)
+    
+    Assumptions:
+    - g = 9.81 m/s²
+    
+    Parameters:
+    -----------
+    Grahsof : float
+        Grahsof number
+    Returns:
+    """
+    g = 9.81
+    nu = mu / rho
+    delta_T = (grahsof * nu**2) / (g * beta * L**3)
+
+    return delta_T
+
 # usage
-if __name__ == "__main__":
+#if __name__ == "__main__":
+
     # Generate table from melting point to 1200 K
     T_min = 455  # K
     T_max = 1600  # K
@@ -213,3 +240,12 @@ if __name__ == "__main__":
     print(f"Cp: {li.heat_capacity_p(T):.4f} J/(mol·K)")
     print(f"Viscosity: {li.viscosity(T):.2f} µPa·s")
     print(f"Thermal conductivity: {li.thermal_conductivity(T):.2f} W/(m·K)")
+
+
+if __name__ == '__main__':
+    li = LiquidLithiumProperties()
+    grashof = 4.8 * 10**6
+    T_ref = 467
+    L_ref = 0.1
+    delta_t = Grahsof_to_temp_diff(grashof, li.coeff_vol_exp(T_ref), L_ref, li.viscosity(T_ref)*1e-6, li.density_mass(T_ref))
+    print(f"\nFor Grahsof number {grashof:.0f} at T_ref = {T_ref} K, the temperature difference is approximately {delta_t:.2f} K.")
