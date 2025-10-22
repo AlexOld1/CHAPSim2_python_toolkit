@@ -1,6 +1,13 @@
 import numpy as np
 import pandas as pd
 
+# ====================================================================================================================================================
+
+"""
+Thermophysical properties of liquid lithium are given in class LiquidLithiumProperties.
+Functions for generating property tables or temp. difference from Grahsof number are provided.
+"""
+
 class LiquidLithiumProperties:
     """
     Thermophysical properties of liquid lithium.
@@ -228,7 +235,7 @@ def Grahsof_to_temp_diff(grahsof, beta, L, mu, rho):
     pd.set_option('display.float_format', '{:.6e}'.format)
     print(table)
     
-    # Example: Access properties at specific temperature
+    # Access properties at specific temperature
     print("\n" + "="*70)
     print("Example: Properties at 800 K:")
     print("="*70)
@@ -248,4 +255,4 @@ if __name__ == '__main__':
     T_ref = 467
     L_ref = 0.1
     delta_t = Grahsof_to_temp_diff(grashof, li.coeff_vol_exp(T_ref), L_ref, li.viscosity(T_ref)*1e-6, li.density_mass(T_ref))
-    print(f"\nFor Grahsof number {grashof:.0f} at T_ref = {T_ref} K, the temperature difference is approximately {delta_t:.2f} K.")
+    print(f"\nFor Grahsof number {grashof:.0f} at T_ref = {T_ref} K and L_ref = {L_ref}, the temperature difference is approximately {delta_t:.2f} K.")
