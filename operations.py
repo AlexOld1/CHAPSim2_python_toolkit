@@ -1,10 +1,18 @@
 import numpy as np
 
-def get_Re(case, cases, Re):
-    if not int and len(Re) > 1:
-        cur_Re = Re[cases.index(case)]
+def get_Re(case, cases, Re, ux_velocity, flow_forcing):
+    if flow_forcing == 'CMF':
+        if not int and len(Re) > 1:
+            cur_Re = Re[cases.index(case)]
+        else:
+         cur_Re = Re[0]
+    elif flow_forcing == 'CPG':
+        if not int and len(Re) > 1:
+            cur_Re = np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]) * Re[cases.index(case)] # dunno if this works
+        else:
+            cur_Re = np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]) * Re[0]
     else:
-        cur_Re = Re[0]
+        raise ValueError("flow_forcing must be either 'CMF' or 'CPG'")
     return cur_Re
 
 def read_velocity_profile(ux):

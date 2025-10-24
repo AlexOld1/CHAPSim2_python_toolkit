@@ -5,19 +5,23 @@ import matplotlib.pyplot as plt
 # Input parameters
 # ====================================================================================================================================================
 
-path = '/home/alex/sim_results/mesh_con_Ha_30/30_pts/3_monitor/3_monitor/'
+path = '/home/alex/sim_results/mhd_heated_channel_validation/Ha_16/3_monitor/'
+#path = '/home/alex/sim_results/mesh_con_Ha_30/30_pts/3_monitor/3_monitor/'
 #path = '/home/alex/sim_results/mhd_channel_validation/CPG/Ha_6/3_monitor/'
 files = ['domain1_monitor_pt1_flow.dat','domain1_monitor_pt3_flow.dat','domain1_monitor_pt5_flow.dat',
          'domain1_monitor_pt2_flow.dat','domain1_monitor_pt4_flow.dat']
+clean_file = True
 
 # ====================================================================================================================================================
 
-def clean_dat_file(input_file, output_file, expected_cols=6):
+def clean_dat_file(input_file, output_file, expected_cols=7):
     clean_data = []
     bad_lines = []
     
     with open(input_file, 'r') as f:
         for line_num, line in enumerate(f, 1):
+            if line_num <= 3:
+                continue
             try:
                 values = [float(x) for x in line.split()]
                 if len(values) == expected_cols:
@@ -39,8 +43,11 @@ def clean_dat_file(input_file, output_file, expected_cols=6):
     return np.array(clean_data)
 
 for file in files:
-    print(f'Cleaning dataset {file}...')
-    data = clean_dat_file(path+file, f'{file.replace('.dat','_clean')}', expected_cols=6)
+    if clean_file:
+        print(f'Cleaning dataset {file}...')
+        data = clean_dat_file(path+file, f'{file.replace('.dat','_clean')}', expected_cols=7)
+    else:
+        data = np.loadtxt(path+file, skiprows=3)
     time = data[:,0]
     u = data[:,1]
     v = data[:,2]

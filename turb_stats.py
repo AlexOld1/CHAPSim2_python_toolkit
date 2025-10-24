@@ -29,6 +29,7 @@ class Config:
     cases: List[str]
     timesteps: List[str]
     quantities: List[str]
+    forcing: str
     Re: List[str]
 
     # Output options
@@ -73,6 +74,7 @@ class Config:
             cases=config_module.cases,
             timesteps=config_module.timesteps,
             quantities=config_module.quantities,
+            forcing=config_module.forcing,
             Re=config_module.Re,
             ux_velocity_on=config_module.ux_velocity_on,
             u_prime_sq_on=config_module.u_prime_sq_on,
@@ -496,7 +498,7 @@ class TurbulenceStatsPipeline:
                     print(f'Missing ux data for normalization: {case}, {timestep}')
                     continue
 
-                cur_Re = op.get_Re(case, self.config.cases, self.config.Re)
+                cur_Re = op.get_Re(case, self.config.cases, self.config.Re, ux_data, self.config.forcing)
 
                 # Normalize
                 if self.config.norm_by_u_tau_sq:
@@ -742,7 +744,7 @@ class TurbulencePlotter:
         if self.config.set_y_plus_scaling:
             return y * self.config.y_plus_scale_value
         else:
-            cur_Re = op.get_Re(case, self.config.cases, self.config.Re)
+            cur_Re = op.get_Re(case, self.config.cases, self.config.Re, ux_data, self.config.forcing)
             return op.norm_y_to_y_plus(y, ux_data, cur_Re)
 
     def _get_color(self, case: str, stat_name: str) -> str:
