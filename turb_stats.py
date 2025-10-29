@@ -1,6 +1,5 @@
-# CHAPSim2_pp.py
+# turb_stats.py
 # This script processes computes first order turbulence statistics from time and space averaged data for channel flow simulations.
-# Refactored to use object-oriented design for better maintainability and extensibility.
 
 # import libraries ------------------------------------------------------------------------------------------------------------------------------------
 from abc import ABC, abstractmethod
@@ -39,6 +38,7 @@ class Config:
     w_prime_sq_on: bool
     v_prime_sq_on: bool
     tke_on: bool
+    temp_on: bool
 
     # Processing options
     symmetric_average_on: bool
@@ -47,12 +47,11 @@ class Config:
     stat_start_timestep: int
     norm_by_u_tau_sq: bool
     norm_ux_by_u_tau: bool
+    norm_y_to_y_plus: bool
 
     # Plotting options
     linear_y_scale: bool
     log_y_scale: bool
-    set_y_plus_scaling: bool
-    y_plus_scale_value: float
     multi_plot: bool
     display_fig: bool
     save_fig: bool
@@ -60,11 +59,7 @@ class Config:
     # Reference data options
     ux_velocity_log_ref_on: bool
     mhd_NK_ref_on: bool
-    mhd_XCompact_ref_on: bool
     mkm180_ch_ref_on: bool
-
-    # 3D visualisation
-    visualisation_on: bool = False
 
     @classmethod
     def from_module(cls, config_module):
@@ -82,22 +77,21 @@ class Config:
             w_prime_sq_on=config_module.w_prime_sq_on,
             v_prime_sq_on=config_module.v_prime_sq_on,
             tke_on=config_module.tke_on,
+            temp_on=config_module.temp_on,
             symmetric_average_on=config_module.symmetric_average_on,
             window_average_on=config_module.window_average_on,
             window_average_val_lower_bound=config_module.window_average_val_lower_bound,
             stat_start_timestep=config_module.stat_start_timestep,
             norm_by_u_tau_sq=config_module.norm_by_u_tau_sq,
             norm_ux_by_u_tau=config_module.norm_ux_by_u_tau,
+            norm_y_to_y_plus=config_module.norm_y_to_y_plus,
             linear_y_scale=config_module.linear_y_scale,
             log_y_scale=config_module.log_y_scale,
-            set_y_plus_scaling=config_module.set_y_plus_scaling,
-            y_plus_scale_value=config_module.y_plus_scale_value,
             multi_plot=config_module.multi_plot,
             display_fig=config_module.display_fig,
             save_fig=config_module.save_fig,
             ux_velocity_log_ref_on=config_module.ux_velocity_log_ref_on,
             mhd_NK_ref_on=config_module.mhd_NK_ref_on,
-            mhd_XCompact_ref_on=config_module.mhd_XCompact_ref_on,
             mkm180_ch_ref_on=config_module.mkm180_ch_ref_on,
         )
 
@@ -169,8 +163,11 @@ class PlotConfig:
             }
 
     @property
-    def colors(self):
+    def colours(self):
         """Returns tuple of all color schemes"""
+        return (self.colors_1, self.colors_2, self.colors_3, self.colors_4, self.colors_blck)
+    def colours_ref(self):
+        """Returns tuple of all color schemes with black first for plotting a reference"""
         return (self.colors_blck, self.colors_1, self.colors_2, self.colors_3, self.colors_4)
 
 
@@ -238,7 +235,7 @@ class ReferenceData:
         'ref_NK_uv_Ha_4': 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_4_uv_rms.txt',
     }
 
-    REF_XCOMP_HA_6_PATH = 'Reference_Data/XCompact3D_mhd_validation/u_prime_sq.txt'
+    #REF_XCOMP_HA_6_PATH = 'Reference_Data/XCompact3D_mhd_validation/u_prime_sq.txt'
 
     def __init__(self, config: Config):
         self.config = config
@@ -264,8 +261,8 @@ class ReferenceData:
         if self.config.mhd_NK_ref_on:
             self._load_noguchi_kasagi()
 
-        if self.config.mhd_XCompact_ref_on:
-            self._load_xcompact()
+        #if self.config.mhd_XCompact_ref_on:
+        #    self._load_xcompact()
 
     def _load_mkm180(self) -> None:
         """Load MKM180 reference data"""
@@ -317,18 +314,6 @@ class ReferenceData:
             print("Noguchi & Kasagi MHD channel reference data loaded successfully.")
         except Exception as e:
             print(f"NK mhd reference is disabled or required data is missing: {e}")
-
-    def _load_xcompact(self) -> None:
-        """Load XCompact3D MHD reference data"""
-        try:
-            ref_data = np.loadtxt(self.REF_XCOMP_HA_6_PATH, delimiter=',', skiprows=1)
-            self.xcomp_yplus_uu_H6 = ref_data[:, 0]
-            self.xcomp_H6_stats = {
-                'u_prime_sq': ref_data[:, 1]
-            }
-            print("XCompact mhd reference data loaded successfully")
-        except Exception as e:
-            print(f"XCompact mhd reference is disabled or required data is missing: {e}")
 
 
 # =====================================================================================================================================================
@@ -502,13 +487,13 @@ class TurbulenceStatsPipeline:
 
                 # Normalize
                 if self.config.norm_by_u_tau_sq:
-                    normed = op.norm_turb_stat_wrt_u_tau_sq(ux_data, values, cur_Re)
+                    normed = op.norm_turb_stat_wrt_u_tau_sq(ux_data, values, cur_Re, self.config.forcing)
                 else:
                     normed = values
 
                 # Special normalization for ux velocity
                 if self.config.norm_ux_by_u_tau and stat.name == 'ux_velocity':
-                    normed = op.norm_ux_velocity_wrt_u_tau(ux_data, cur_Re)
+                    normed = op.norm_ux_velocity_wrt_u_tau(ux_data, cur_Re, self.config.forcing)
                     print(f'ux velocity normalised by u_tau for {case}, {timestep}')
 
                 # Symmetric averaging (skip for u'v')
@@ -560,6 +545,7 @@ class TurbulencePlotter:
                            reference_data: Optional[ReferenceData] = None):
         """Create a single combined plot for all statistics"""
         plt.figure(figsize=(10, 6))
+        plt.gcf().canvas.manager.set_window_title('Turbulence Statistics')
 
         for stat in statistics:
             for (case, timestep), values in stat.processed_results.items():
@@ -585,7 +571,7 @@ class TurbulencePlotter:
                     self._plot_log_reference_lines(plt, y_plus)
 
         plt.xlabel('$y^+$')
-
+ 
         if len(statistics) == 1:
             plt.ylabel(f"Normalised {statistics[0].name.replace('_', ' ')}")
         else:
@@ -607,6 +593,7 @@ class TurbulencePlotter:
             nrows=nrows, ncols=ncols, figsize=(15, 10),
             constrained_layout=True
         )
+        fig.canvas.manager.set_window_title('Turbulence Statistics')
 
         # Ensure axs is always 2D array
         if nrows == 1 and ncols == 1:
@@ -709,20 +696,6 @@ class TurbulencePlotter:
                           label='Ha = 6, Noguchi & Kasagi',
                           color=self.plot_config.colors_2[stat_name], markevery=2)
 
-        # XCompact3D reference
-        if self.config.mhd_XCompact_ref_on and reference_data.xcomp_H6_stats:
-            if stat_name in reference_data.xcomp_H6_stats:
-                if self.config.log_y_scale:
-                    ax.semilogx(reference_data.xcomp_yplus_uu_H6,
-                              reference_data.xcomp_H6_stats[stat_name],
-                              linestyle='', marker='s',
-                              label='XCompact3D, Ha = 6')
-                else:
-                    ax.plot(reference_data.xcomp_yplus_uu_H6,
-                          reference_data.xcomp_H6_stats[stat_name],
-                          linestyle='', marker='s',
-                          label='XCompact3D, Ha = 6')
-
     def _plot_log_reference_lines(self, ax, y_plus: np.ndarray) -> None:
         """Plot reference lines for log-scale velocity plots"""
         if self.config.log_y_scale:
@@ -741,16 +714,17 @@ class TurbulencePlotter:
 
         y = (ux_data[:len(ux_data)//2, 1] + 1)
 
-        if self.config.set_y_plus_scaling:
-            return y * self.config.y_plus_scale_value
-        else:
+        if self.config.norm_y_to_y_plus:
             cur_Re = op.get_Re(case, self.config.cases, self.config.Re, ux_data, self.config.forcing)
             return op.norm_y_to_y_plus(y, ux_data, cur_Re)
+        else:
+            y_plus = y
+            return y_plus
 
     def _get_color(self, case: str, stat_name: str) -> str:
-        """Get color for a case and statistic"""
-        if len(self.config.cases) <= len(self.plot_config.colors) and stat_name in self.plot_config.stat_labels:
-            colour_set = op.get_col(case, self.config.cases, self.plot_config.colors)
+        """Get colour for a case and statistic"""
+        if len(self.config.cases) <= len(self.plot_config.colours) and stat_name in self.plot_config.stat_labels:
+            colour_set = op.get_col(case, self.config.cases, self.plot_config.colours)
             return colour_set[stat_name]
         else:
             return np.random.choice(list(mcolors.CSS4_COLORS.keys()))

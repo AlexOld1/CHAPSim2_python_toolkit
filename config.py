@@ -4,7 +4,7 @@
 folder_path = '/home/alex/sim_results/mhd_channel_validation/CPG/'
 cases = ['Ha_4','Ha_6'] # case names must match folder names exactly
 timesteps = ['284000','290000']
-quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr'] # for time & space averaged files
+quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr','T'] # for time & space averaged files
 
 forcing = 'CPG' # 'CMF' or 'CPG'
 Re = [2305, 2355] # indexing matches 'cases' if different Re used. Use reference value for CPG.
@@ -12,12 +12,13 @@ Re = [2305, 2355] # indexing matches 'cases' if different Re used. Use reference
 # Output ----------------------------------------------------------------------------------------------------------------------------------------------
 
 # velocity profiles & first order statistics
-ux_velocity_on = False
+ux_velocity_on = True
 u_prime_sq_on = True
 u_prime_v_prime_on = True
 w_prime_sq_on = True
 v_prime_sq_on = True
 tke_on = True
+temp_on = False
 
 # Processing options ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -28,23 +29,21 @@ window_average_val_lower_bound = 180000 # this doesn't work right now
 stat_start_timestep = 180000
 
 # normalisation (1D data)
-norm_by_u_tau_sq = True
-norm_ux_by_u_tau = True
+norm_by_u_tau_sq = False
+norm_ux_by_u_tau = False
+norm_y_to_y_plus = True
 
 # Plotting options ------------------------------------------------------------------------------------------------------------------------------------
 
 linear_y_scale = True
 log_y_scale = False
-set_y_plus_scaling = False
-y_plus_scale_value = 153
 multi_plot = True
 display_fig = True
 save_fig = False
 
 # reference data options
 ux_velocity_log_ref_on = True
-mhd_NK_ref_on = True
-mhd_XCompact_ref_on = False
+mhd_NK_ref_on = False
 mkm180_ch_ref_on = False
 
 #====================================================================================================================================================

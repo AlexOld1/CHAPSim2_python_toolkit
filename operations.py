@@ -8,9 +8,9 @@ def get_Re(case, cases, Re, ux_velocity, flow_forcing):
          cur_Re = Re[0]
     elif flow_forcing == 'CPG':
         if not int and len(Re) > 1:
-            cur_Re = np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]) * Re[cases.index(case)] # dunno if this works
+            cur_Re = Re[cases.index(case)] / (0.5 * np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]))
         else:
-            cur_Re = np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]) * Re[0]
+           cur_Re = Re[0] / (0.5 * np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]))
     else:
         raise ValueError("flow_forcing must be either 'CMF' or 'CPG'")
     return cur_Re
@@ -57,8 +57,8 @@ def print_flow_info(ux_data, Re_bulk, case, timestep):
     u_tau = np.sqrt(abs(dudy/Re_bulk))
     Re_tau = u_tau * Re_bulk
     print(f'Case: {case}, Timestep: {timestep}')
-    print(f'u_tau = {u_tau}, tau_w = {tau_w}, Re_tau = {Re_tau}')
-    print('-'*85)
+    print(f'Re_bulk = {Re_bulk}, u_tau = {u_tau}, tau_w = {tau_w}, Re_tau = {Re_tau}')
+    print('-'*100)
     return
 
 def norm_turb_stat_wrt_u_tau_sq(ux_data, turb_stat, Re_bulk):
@@ -69,9 +69,6 @@ def norm_turb_stat_wrt_u_tau_sq(ux_data, turb_stat, Re_bulk):
     dudy = du/dy
     tau_w = dudy/Re_bulk
     u_tau_sq = abs(tau_w)
-    u_tau = np.sqrt(u_tau_sq)
-    Re_tau = u_tau * Re_bulk
-
     turb_stat = np.asarray(turb_stat)
     return np.divide(turb_stat, u_tau_sq)
 
@@ -94,6 +91,7 @@ def norm_y_to_y_plus(y, ux_data, Re_bulk):
     dudy = du/dy
     u_tau = np.sqrt(abs(dudy/Re_bulk))
     y_plus = y * u_tau * Re_bulk
+
     return y_plus
 
 def symmetric_average(arr):
