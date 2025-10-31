@@ -22,12 +22,6 @@ temp_on = False
 
 # Processing options ----------------------------------------------------------------------------------------------------------------------------------
 
-# averaging (1D data)
-symmetric_average_on = True
-window_average_on = False
-window_average_val_lower_bound = 180000 # this doesn't work right now
-stat_start_timestep = 180000
-
 # normalisation (1D data)
 norm_by_u_tau_sq = True
 norm_ux_by_u_tau = True
@@ -35,6 +29,7 @@ norm_y_to_y_plus = True
 
 # Plotting options ------------------------------------------------------------------------------------------------------------------------------------
 
+half_channel_plot = False
 linear_y_scale = True
 log_y_scale = False
 multi_plot = True
@@ -43,7 +38,7 @@ save_fig = False
 
 # reference data options
 ux_velocity_log_ref_on = True
-mhd_NK_ref_on = True
+mhd_NK_ref_on = False
 mkm180_ch_ref_on = False
 
 #====================================================================================================================================================

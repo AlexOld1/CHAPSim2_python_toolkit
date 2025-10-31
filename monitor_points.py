@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import utils as ut
 
 plt.rcParams['agg.path.chunksize'] = 10000 # Configure matplotlib for better performance with large datasets
 plt.rcParams['path.simplify_threshold'] = 1.0
@@ -13,47 +14,22 @@ path = '/home/alex/sim_results/mhd_heated_channel_validation/Ha_16/3_monitor/'
 #path = '/home/alex/sim_results/mhd_channel_validation/CPG/Ha_6/3_monitor/'
 files = ['domain1_monitor_pt1_flow.dat','domain1_monitor_pt3_flow.dat','domain1_monitor_pt5_flow.dat',
          'domain1_monitor_pt2_flow.dat','domain1_monitor_pt4_flow.dat']
-clean_file = True
-downsample_factor = 100  # Plot every Nth point to reduce data density
+clean_file = False
+sample_factor = 100  # Plot every nth point to reduce data density
+thermo_on = True
 
 # ====================================================================================================================================================
-
-def clean_dat_file(input_file, output_file, expected_cols=7):
-    clean_data = []
-    bad_lines = []
-    
-    with open(input_file, 'r') as f:
-        for line_num, line in enumerate(f, 1):
-            if line_num <= 3:
-                continue
-            try:
-                values = [float(x) for x in line.split()]
-                if len(values) == expected_cols:
-                    clean_data.append(values)
-                else:
-                    bad_lines.append((line_num, len(values), line.strip()))
-                    
-            except ValueError as e:
-                bad_lines.append((line_num, 'ERROR', line.strip()))
-      
-    if bad_lines:
-        print(f"Found {len(bad_lines)} problematic lines")
-        #for line_num, cols, content in bad_lines:
-        #    print(f"  Line {line_num} ({cols} cols): {content[:80]}...")
-    
-    np.savetxt(f'monitor_point_plots/{output_file}', clean_data, fmt='%.5E')  # Save clean data
-    print(f"\nSaved {len(clean_data)} clean lines to {output_file}")
-    
-    return np.array(clean_data)
-
+ 
 for file in files:
     if clean_file:
         print(f'Cleaning dataset {file}...')
-        data = clean_dat_file(path+file, f'{file.replace('.dat','_clean')}', expected_cols=7)
+        expected_columns = 7 if thermo_on else 6
+        data = ut.clean_dat_file(path+file, f'{file.replace('.dat','_clean')}', expected_columns)
     else:
-        data = np.loadtxt(path+file, skiprows=3)
+        data = np.loadtxt(f'monitor_point_plots/{file.replace('.dat','_clean')}', skiprows=3)
+        print(f'Loaded monitor_point_plots/{file.replace('.dat','_clean')} for plotting.')
 
-    data = data[::downsample_factor] # Downsample data for plotting
+    data = data[::sample_factor] # sample data for plotting
     print(f'Plotting {len(data)} points')
 
     time = data[:,0]
@@ -61,15 +37,25 @@ for file in files:
     v = data[:,2]
     w = data[:,3]
     p = data[:,4]
+    phi = data[:,5]
+    if thermo_on:
+        T = data[:,6]
 
     plt.figure(figsize=(10,6))
-    #plt.plot(time, u, label='u-velocity', linewidth=0.5)
-    #plt.plot(time, v, label='v-velocity', linewidth=0.5)
-    #plt.plot(time, w, label='w-velocity', linewidth=0.5)
+    plt.plot(time, u, label='u-velocity', linewidth=0.5)
+    plt.plot(time, v, label='v-velocity', linewidth=0.5)
+    plt.plot(time, w, label='w-velocity', linewidth=0.5)
     plt.plot(time, p, label='pressure', linewidth=0.5)
+    plt.plot(time, phi, label='press. corr.', linewidth=0.5)
+    if thermo_on:
+        plt.plot(time, T, label='temperature', linewidth=0.5)
     plt.xlabel('Time')
     plt.ylabel('Flow Variables')
     plt.title(f'{file}')
     plt.legend()
     plt.grid()
-    plt.savefig(f'monitor_point_plots/{file.replace('.dat','_plot')}', dpi=300)  # Reduced from 1000 to 300
+    plt.savefig(f'monitor_point_plots/{file.replace('.dat','_plot')}', dpi=300)
+
+print('='*80)
+print('All plots saved in monitor_point_plots/.')
+print('='*80)

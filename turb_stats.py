@@ -41,15 +41,12 @@ class Config:
     temp_on: bool
 
     # Processing options
-    symmetric_average_on: bool
-    window_average_on: bool
-    window_average_val_lower_bound: int
-    stat_start_timestep: int
     norm_by_u_tau_sq: bool
     norm_ux_by_u_tau: bool
     norm_y_to_y_plus: bool
 
     # Plotting options
+    half_channel_plot: bool
     linear_y_scale: bool
     log_y_scale: bool
     multi_plot: bool
@@ -78,13 +75,10 @@ class Config:
             v_prime_sq_on=config_module.v_prime_sq_on,
             tke_on=config_module.tke_on,
             temp_on=config_module.temp_on,
-            symmetric_average_on=config_module.symmetric_average_on,
-            window_average_on=config_module.window_average_on,
-            window_average_val_lower_bound=config_module.window_average_val_lower_bound,
-            stat_start_timestep=config_module.stat_start_timestep,
             norm_by_u_tau_sq=config_module.norm_by_u_tau_sq,
             norm_ux_by_u_tau=config_module.norm_ux_by_u_tau,
             norm_y_to_y_plus=config_module.norm_y_to_y_plus,
+            half_channel_plot=config_module.half_channel_plot,
             linear_y_scale=config_module.linear_y_scale,
             log_y_scale=config_module.log_y_scale,
             multi_plot=config_module.multi_plot,
@@ -504,23 +498,20 @@ class TurbulenceStatsPipeline:
                     print(f'ux velocity normalised by u_tau for {case}, {timestep}')
 
                 # Symmetric averaging (skip for u'v')
-                if self.config.symmetric_average_on and stat.name != 'u_prime_v_prime' and stat.name != 'temperature':
-                    normed_avg = op.symmetric_average(normed)
-                    stat.processed_results[(case, timestep)] = normed_avg
-                    # print(f'Symmetric averaged data for {case}, {timestep}')
+                if self.config.half_channel_plot: 
+                    if stat.name != 'u_prime_v_prime' and stat.name != 'temperature':
+                        normed_avg = op.symmetric_average(normed)
+                        stat.processed_results[(case, timestep)] = normed_avg
+                        # print(f'Symmetric averaged data for {case}, {timestep}')
+                    else:
+                        stat.processed_results[(case, timestep)] = normed[:(len(normed)//2)]
+                        #print(f'First half extracted for {case}, {timestep}')
                 else:
-                    stat.processed_results[(case, timestep)] = normed[:(len(normed)//2)]
-                    #print(f'First half extracted for {case}, {timestep}')
+                    stat.processed_results[(case, timestep)] = normed
 
                 # Print flow info
                 cur_Re = op.get_Re(case, self.config.cases, self.config.Re, ux_data, self.config.forcing)
                 op.print_flow_info(ux_data, ref_Re, cur_Re, case, timestep)
-
-                # Window averaging (if enabled)
-                if self.config.window_average_on:
-                    # This functionality is preserved but marked as not working in original
-                    # Implementation would go here if needed
-                    pass
 
     def get_statistic(self, name: str) -> Optional[TurbStatistic]:
         """Get a specific statistic by name"""
@@ -720,7 +711,10 @@ class TurbulencePlotter:
             print(f'Missing ux data for plotting: {case}, {timestep}')
             return None
 
-        y = (ux_data[:len(ux_data)//2, 1] + 1)
+        if self.config.half_channel_plot:
+            y = (ux_data[:len(ux_data)//2, 1] + 1)
+        else:
+            y = ux_data[:, 1]
 
         if self.config.norm_y_to_y_plus:
             cur_Re = op.get_Re(case, self.config.cases, self.config.Re, ux_data, self.config.forcing)

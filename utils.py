@@ -179,6 +179,7 @@ def reader_output_summary(arrays_dict):
         print("-" * 40)
 
 def visualise_domain_var(output, flow_var):
+
     pv_mesh = pv.wrap(output)
 
     if pv_mesh:
@@ -190,3 +191,31 @@ def visualise_domain_var(output, flow_var):
 
     else:
                     print("Error: Could not wrap VTK output to PyVista mesh.")
+
+def clean_dat_file(input_file, output_file, expected_cols):
+    clean_data = []
+    bad_lines = []
+    
+    with open(input_file, 'r') as f:
+        for line_num, line in enumerate(f, 1):
+            if line_num <= 3:
+                continue
+            try:
+                values = [float(x) for x in line.split()]
+                if len(values) == expected_cols:
+                    clean_data.append(values)
+                else:
+                    bad_lines.append((line_num, len(values), line.strip()))
+                    
+            except ValueError as e:
+                bad_lines.append((line_num, 'ERROR', line.strip()))
+      
+    if bad_lines:
+        print(f"Found {len(bad_lines)} problematic lines")
+        #for line_num, cols, content in bad_lines:
+        #    print(f"  Line {line_num} ({cols} cols): {content[:80]}...")
+    
+    np.savetxt(f'monitor_point_plots/{output_file}', clean_data, fmt='%.5E')  # Save clean data
+    print(f"\nSaved {len(clean_data)} clean lines to {output_file}")
+    
+    return np.array(clean_data)
