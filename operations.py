@@ -8,14 +8,21 @@ def get_Re(case, cases, Re, ux_velocity, flow_forcing):
          cur_Re = Re[0]
     elif flow_forcing == 'CPG':
         if not int and len(Re) > 1:
-            cur_Re = Re[cases.index(case)] / (0.5 * np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]))
+            cur_Re = Re[cases.index(case)] * (0.5 * np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]))
         else:
-           cur_Re = Re[0] / (0.5 * np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]))
+           cur_Re = Re[0] * (0.5 * np.trapezoid(ux_velocity[:, 2], ux_velocity[:, 1]))
     else:
         raise ValueError("flow_forcing must be either 'CMF' or 'CPG'")
     return cur_Re
 
-def read_velocity_profile(ux):
+def get_ref_Re(case, cases, Re):
+    if not int and len(Re) > 1:
+        ref_Re = Re[cases.index(case)]
+    else:
+        ref_Re = Re[0]
+    return ref_Re
+
+def read_profile(ux):
     ux = ux[:, 2]
     return ux
 
@@ -48,17 +55,17 @@ def compute_v_prime_sq(uy, vv):
 def compute_tke(u_prime_sq, v_prime_sq, w_prime_sq):
     return 0.5 * (u_prime_sq + v_prime_sq + w_prime_sq)
 
-def print_flow_info(ux_data, Re_bulk, case, timestep):
-    Re_bulk = int(Re_bulk)
+def print_flow_info(ux_data, Re_ref, Re_bulk, case, timestep):
+    Re_ref = int(Re_ref)
     du = ux_data[0, 2] - ux_data[1, 2]
     dy = ux_data[0, 1] - ux_data[1, 1]
     dudy = du/dy
-    tau_w = dudy/Re_bulk
-    u_tau = np.sqrt(abs(dudy/Re_bulk))
-    Re_tau = u_tau * Re_bulk
+    tau_w = dudy/Re_ref # this should be ref Re not real bulk Re
+    u_tau = np.sqrt(abs(dudy/Re_ref))
+    Re_tau = u_tau * Re_ref
     print(f'Case: {case}, Timestep: {timestep}')
     print(f'Re_bulk = {Re_bulk}, u_tau = {u_tau}, tau_w = {tau_w}, Re_tau = {Re_tau}')
-    print('-'*100)
+    print('-'*120)
     return
 
 def norm_turb_stat_wrt_u_tau_sq(ux_data, turb_stat, Re_bulk):

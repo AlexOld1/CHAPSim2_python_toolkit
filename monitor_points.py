@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.rcParams['agg.path.chunksize'] = 10000 # Configure matplotlib for better performance with large datasets
+plt.rcParams['path.simplify_threshold'] = 1.0
+
 # ====================================================================================================================================================
 # Input parameters
 # ====================================================================================================================================================
@@ -11,6 +14,7 @@ path = '/home/alex/sim_results/mhd_heated_channel_validation/Ha_16/3_monitor/'
 files = ['domain1_monitor_pt1_flow.dat','domain1_monitor_pt3_flow.dat','domain1_monitor_pt5_flow.dat',
          'domain1_monitor_pt2_flow.dat','domain1_monitor_pt4_flow.dat']
 clean_file = True
+downsample_factor = 100  # Plot every Nth point to reduce data density
 
 # ====================================================================================================================================================
 
@@ -33,9 +37,9 @@ def clean_dat_file(input_file, output_file, expected_cols=7):
                 bad_lines.append((line_num, 'ERROR', line.strip()))
       
     if bad_lines:
-        print(f"Found {len(bad_lines)} problematic lines:")
-        for line_num, cols, content in bad_lines:
-            print(f"  Line {line_num} ({cols} cols): {content[:80]}...")
+        print(f"Found {len(bad_lines)} problematic lines")
+        #for line_num, cols, content in bad_lines:
+        #    print(f"  Line {line_num} ({cols} cols): {content[:80]}...")
     
     np.savetxt(f'monitor_point_plots/{output_file}', clean_data, fmt='%.5E')  # Save clean data
     print(f"\nSaved {len(clean_data)} clean lines to {output_file}")
@@ -48,6 +52,10 @@ for file in files:
         data = clean_dat_file(path+file, f'{file.replace('.dat','_clean')}', expected_cols=7)
     else:
         data = np.loadtxt(path+file, skiprows=3)
+
+    data = data[::downsample_factor] # Downsample data for plotting
+    print(f'Plotting {len(data)} points')
+
     time = data[:,0]
     u = data[:,1]
     v = data[:,2]
@@ -55,13 +63,13 @@ for file in files:
     p = data[:,4]
 
     plt.figure(figsize=(10,6))
-    plt.plot(time, u, label='u-velocity')
-    plt.plot(time, v, label='v-velocity')
-    plt.plot(time, w, label='w-velocity')
-    plt.plot(time, p, label='pressure')
+    #plt.plot(time, u, label='u-velocity', linewidth=0.5)
+    #plt.plot(time, v, label='v-velocity', linewidth=0.5)
+    #plt.plot(time, w, label='w-velocity', linewidth=0.5)
+    plt.plot(time, p, label='pressure', linewidth=0.5)
     plt.xlabel('Time')
     plt.ylabel('Flow Variables')
     plt.title(f'{file}')
     plt.legend()
     plt.grid()
-    plt.savefig(f'monitor_point_plots/{file.replace('.dat','_plot')}', dpi=1000)
+    plt.savefig(f'monitor_point_plots/{file.replace('.dat','_plot')}', dpi=300)  # Reduced from 1000 to 300

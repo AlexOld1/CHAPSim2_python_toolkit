@@ -376,8 +376,7 @@ class StreamwiseVelocity(TurbStatistic):
         super().__init__('ux_velocity', 'Streamwise Velocity', ['ux'])
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return op.read_velocity_profile(data_dict['ux'])
-
+        return op.read_profile(data_dict['ux'])
 
 class ReynoldsStressUU(TurbStatistic):
     """Reynolds stress u'u'"""
@@ -388,7 +387,6 @@ class ReynoldsStressUU(TurbStatistic):
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
         return op.compute_u_prime_sq(data_dict['ux'], data_dict['uu'])
 
-
 class ReynoldsStressUV(TurbStatistic):
     """Reynolds stress u'v'"""
 
@@ -398,7 +396,6 @@ class ReynoldsStressUV(TurbStatistic):
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
         return op.compute_u_prime_v_prime(data_dict['ux'], data_dict['uy'], data_dict['uv'])
 
-
 class ReynoldsStressVV(TurbStatistic):
     """Reynolds stress v'v'"""
 
@@ -407,7 +404,6 @@ class ReynoldsStressVV(TurbStatistic):
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
         return op.compute_v_prime_sq(data_dict['uy'], data_dict['vv'])
-
 
 class ReynoldsStressWW(TurbStatistic):
     """Reynolds stress w'w'"""
@@ -430,6 +426,14 @@ class TurbulentKineticEnergy(TurbStatistic):
         w_prime_sq = op.compute_w_prime_sq(data_dict['uz'], data_dict['ww'])
         return op.compute_tke(u_prime_sq, v_prime_sq, w_prime_sq)
 
+class Temperature(TurbStatistic):
+    """Temperature profile"""
+
+    def __init__(self):
+        super().__init__('temperature', 'Temperature', ['T'])
+
+    def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
+        return op.read_profile(data_dict['T'])
 
 # =====================================================================================================================================================
 # PIPELINE CLASS
@@ -464,6 +468,9 @@ class TurbulenceStatsPipeline:
         if self.config.tke_on:
             self.statistics.append(TurbulentKineticEnergy())
 
+        if self.config.temp_on:
+            self.statistics.append(Temperature())
+
     def compute_all(self) -> None:
         """Compute all registered statistics for all cases and timesteps"""
         for stat in self.statistics:
@@ -483,21 +490,21 @@ class TurbulenceStatsPipeline:
                     print(f'Missing ux data for normalization: {case}, {timestep}')
                     continue
 
-                cur_Re = op.get_Re(case, self.config.cases, self.config.Re, ux_data, self.config.forcing)
+                ref_Re = op.get_ref_Re(case, self.config.cases, self.config.Re)
 
                 # Normalize
-                if self.config.norm_by_u_tau_sq:
-                    normed = op.norm_turb_stat_wrt_u_tau_sq(ux_data, values, cur_Re, self.config.forcing)
+                if self.config.norm_by_u_tau_sq and stat.name != 'temperature':
+                    normed = op.norm_turb_stat_wrt_u_tau_sq(ux_data, values, ref_Re)
                 else:
                     normed = values
 
                 # Special normalization for ux velocity
                 if self.config.norm_ux_by_u_tau and stat.name == 'ux_velocity':
-                    normed = op.norm_ux_velocity_wrt_u_tau(ux_data, cur_Re, self.config.forcing)
+                    normed = op.norm_ux_velocity_wrt_u_tau(ux_data, ref_Re)
                     print(f'ux velocity normalised by u_tau for {case}, {timestep}')
 
                 # Symmetric averaging (skip for u'v')
-                if self.config.symmetric_average_on and stat.name != 'u_prime_v_prime':
+                if self.config.symmetric_average_on and stat.name != 'u_prime_v_prime' and stat.name != 'temperature':
                     normed_avg = op.symmetric_average(normed)
                     stat.processed_results[(case, timestep)] = normed_avg
                     # print(f'Symmetric averaged data for {case}, {timestep}')
@@ -506,7 +513,8 @@ class TurbulenceStatsPipeline:
                     #print(f'First half extracted for {case}, {timestep}')
 
                 # Print flow info
-                op.print_flow_info(ux_data, cur_Re, case, timestep)
+                cur_Re = op.get_Re(case, self.config.cases, self.config.Re, ux_data, self.config.forcing)
+                op.print_flow_info(ux_data, ref_Re, cur_Re, case, timestep)
 
                 # Window averaging (if enabled)
                 if self.config.window_average_on:
@@ -757,9 +765,9 @@ def main():
     import config as config_module
     config = Config.from_module(config_module)
 
-    print("="*85)
+    print("="*120)
     print("TURBULENCE STATISTICS PROCESSING")
-    print("="*85)
+    print("="*120)
 
     # Load turbulence data
     print("\nLoading turbulence data...")
@@ -802,9 +810,9 @@ def main():
     else:
         print('\nNo output option selected')
 
-    print("\n" + "="*85)
+    print("\n" + "="*120)
     print("PROCESSING COMPLETE")
-    print("="*85)
+    print("="*120)
 
 
 if __name__ == '__main__':
