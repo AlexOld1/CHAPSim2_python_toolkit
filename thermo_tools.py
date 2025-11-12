@@ -83,6 +83,11 @@ class LiquidLithiumProperties:
     def heat_capacity_p(self, T):
         """Molar heat capacity at constant pressure Cp in J/(mol·K)"""
         Cp_mass = 4754 - 0.925 * T + 0.000291 * T**2  # J/(kg·K)
+        return Cp_mass
+    
+    def heat_capacity_p_molar(self, T):
+        """Molar heat capacity at constant pressure Cp in J/(mol·K)"""
+        Cp_mass = 4754 - 0.925 * T + 0.000291 * T**2  # J/(kg·K)
         Cp_molar = Cp_mass * self.M / 1000  # J/(mol·K)
         return Cp_molar
     
@@ -174,7 +179,7 @@ def generate_property_table(T_min, T_max, T_ref, pressure=0.1, n_points=20,
         'Enthalpy (kJ/mol)': [li.enthalpy(T, T_ref) for T in T_array],
         'Entropy (J/mol*K)': [li.entropy(T, T_ref) for T in T_array],
         'Cv (J/mol*K)': [li.heat_capacity_v(T) for T in T_array],
-        'Cp (J/mol*K)': [li.heat_capacity_p(T) for T in T_array],
+        'Cp (J/mol*K)': [li.heat_capacity_p_molar(T) for T in T_array],
         'Sound Spd. (m/s)': [li.speed_of_sound(T) for T in T_array],
         'Joule-Thomson (K/MPa)': [li.joule_thomson(T) for T in T_array],
         'Viscosity (uPa*s)': [li.viscosity(T) for T in T_array],
@@ -226,21 +231,20 @@ def Grahsof_to_temp_diff(grahsof, beta, L, mu, rho):
     print(f"Temperature range: {T_min} K to {T_max} K")
     print(f"Pressure: {pressure} MPa\n")
     
-    table = generate_property_table(T_min, T_max, T_ref, pressure=pressure, 
-                                   n_points=12000, save_tsv=True)
+    #table = generate_property_table(T_min, T_max, T_ref, pressure=pressure, n_points=12000, save_tsv=True)
     
     # Display table
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.width', None)
-    pd.set_option('display.float_format', '{:.6e}'.format)
-    print(table)
+    #pd.set_option('display.max_columns', None)
+    #pd.set_option('display.width', None)
+    #pd.set_option('display.float_format', '{:.6e}'.format)
+    #print(table)
     
     # Access properties at specific temperature
     print("\n" + "="*70)
     print("Example: Properties at 800 K:")
     print("="*70)
     li = LiquidLithiumProperties()
-    T = 800
+    T = 670
     print(f"Molar density: {li.density_molar(T):.4f} mol/L")
     print(f"Molar volume: {li.molar_volume(T):.4f} L/mol")
     print(f"Enthalpy: {li.enthalpy(T, T_ref):.4f} kJ/mol")
@@ -248,11 +252,43 @@ def Grahsof_to_temp_diff(grahsof, beta, L, mu, rho):
     print(f"Viscosity: {li.viscosity(T):.2f} µPa·s")
     print(f"Thermal conductivity: {li.thermal_conductivity(T):.2f} W/(m·K)")
 
+def get_prandtl(temp):
+    """
+    Calculate Prandtl number.
+    
+    Pr = (c_p * mu) / k
+    
+    Parameters:
+    -----------
+    temp : float
+        Temperature in K (not used directly but for reference)
+    c_p : float
+        Specific heat capacity at constant pressure in J/(kg·K)
+    mu : float
+        Dynamic viscosity in Pa·s
+    k : float
+        Thermal conductivity in W/(m·K)
+    
+    Returns:
+    --------
+    float
+        Prandtl number (dimensionless)
+    """
+    li = LiquidLithiumProperties()
+    mu = li.viscosity(temp) * 1e-6  # Convert µ
+    k = li.thermal_conductivity(temp)
+    c_p = li.heat_capacity_p(temp)
+    Pr = (c_p * mu) / k
+    
+    return Pr
+    
 
 if __name__ == '__main__':
     li = LiquidLithiumProperties()
-    grashof = 4.8 * 10**6
-    T_ref = 467
+    grashof = 1 * 10**9
+    T_ref = 670
     L_ref = 0.1
     delta_t = Grahsof_to_temp_diff(grashof, li.coeff_vol_exp(T_ref), L_ref, li.viscosity(T_ref)*1e-6, li.density_mass(T_ref))
+    Pr = get_prandtl(T_ref)
     print(f"\nFor Grahsof number {grashof:.0f} at T_ref = {T_ref} K and L_ref = {L_ref}, the temperature difference is approximately {delta_t:.2f} K.")
+    print(f"Prandtl number at {T_ref} K is approximately {Pr:.4f}.\n")

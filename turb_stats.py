@@ -5,7 +5,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors

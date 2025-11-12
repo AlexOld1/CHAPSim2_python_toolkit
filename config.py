@@ -1,15 +1,15 @@
-# Define input cases ----------------------------------------------------------------------------------------------------------------------------------
+# Define input cases ==================================================================================================================================
 
 # format: folder_path/case/1_data/quantity_timestep.dat
 folder_path = '/home/alex/sim_results/mhd_channel_validation/CPG/'
-cases = ['Ha_4','Ha_6'] # case names must match folder names exactly
-timesteps = ['284000','290000','454000','552000']
+cases = ['Ha_4'] # case names must match folder names exactly
+timesteps = ['215000','290000']
 quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr','T'] # for time & space averaged files
 
 forcing = 'CPG' # 'CMF' or 'CPG'
 Re = [2305, 2355] # indexing matches 'cases' if different Re used. Use reference value for CPG.
 
-# Output ----------------------------------------------------------------------------------------------------------------------------------------------
+# Output ==============================================================================================================================================
 
 # velocity profiles & first order statistics
 ux_velocity_on = True
@@ -29,7 +29,7 @@ norm_y_to_y_plus = True
 
 # Plotting options ------------------------------------------------------------------------------------------------------------------------------------
 
-half_channel_plot = False
+half_channel_plot = True
 linear_y_scale = True
 log_y_scale = False
 multi_plot = True
@@ -38,7 +38,7 @@ save_fig = False
 
 # reference data options
 ux_velocity_log_ref_on = True
-mhd_NK_ref_on = False
-mkm180_ch_ref_on = False
+mhd_NK_ref_on = True # MHD turbulent channel at Re_tau=150, Ha=(4,6), Noguchi & Kasagi 1994 (thtlabs.jp)
+mkm180_ch_ref_on = False # Turbulent channel at Re_tau=180, Moser, Kim & Mansour 1999 (DOI: 10.1017/S002211209900708X)
 
 #====================================================================================================================================================
