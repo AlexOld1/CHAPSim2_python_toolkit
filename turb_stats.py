@@ -51,6 +51,8 @@ class Config:
     multi_plot: bool
     display_fig: bool
     save_fig: bool
+    save_to_path: bool
+    plot_name: str
 
     # Reference data options
     ux_velocity_log_ref_on: bool
@@ -83,6 +85,8 @@ class Config:
             multi_plot=config_module.multi_plot,
             display_fig=config_module.display_fig,
             save_fig=config_module.save_fig,
+            save_to_path=config_module.save_to_path,
+            plot_name=config_module.plot_name,
             ux_velocity_log_ref_on=config_module.ux_velocity_log_ref_on,
             mhd_NK_ref_on=config_module.mhd_NK_ref_on,
             mkm180_ch_ref_on=config_module.mkm180_ch_ref_on,
@@ -730,9 +734,23 @@ class TurbulencePlotter:
         else:
             return np.random.choice(list(mcolors.CSS4_COLORS.keys()))
 
-    def save_figure(self, fig, filename: str = 'reynold_stresses.png') -> None:
+    def save_figure(self, fig) -> None:
         """Save figure to file"""
-        fig.savefig(filename,
+        if self.config.plot_name:
+            filename = self.config.plot_name
+        else:
+            filename = 'turb_stats_plot.png'
+        if self.config.save_to_path:
+            fig.savefig(f'{self.config.folder_path}/{filename}',
+                        dpi=300,
+                        bbox_inches='tight',
+                        pad_inches=0.1,
+                        facecolor='white',
+                        edgecolor='none',
+                        transparent=True,
+                        orientation='landscape')
+            print(f'Figure saved to {self.config.folder_path}/{filename}')
+        fig.savefig(f'turb_stats_plots/{filename}',
                    dpi=300,
                    bbox_inches='tight',
                    pad_inches=0.1,
@@ -740,7 +758,7 @@ class TurbulencePlotter:
                    edgecolor='none',
                    transparent=True,
                    orientation='landscape')
-        print(f'Figure saved as {filename}')
+        print(f'Figure saved to turb_stats_plots/{filename}')
 
     def display_figure(self) -> None:
         """Display figure"""

@@ -19,6 +19,8 @@ blk_files = ['domain1_monitor_bulk_history.log', 'domain1_monitor_change_history
 
 plt_pts = True
 plt_bulk = True
+save_to_path = True
+
 clean_file = False
 sample_factor = 10  # Plot every nth point to reduce data density
 thermo_on = True
@@ -30,9 +32,9 @@ if plt_pts:
         if clean_file:
             print(f'Cleaning dataset {file}...')
             expected_columns = 7 if thermo_on else 6
-            data = ut.clean_dat_file(path+file, f'{file.replace('.dat','_clean')}', expected_columns)
+            data = ut.clean_dat_file(path+file, f'{file.replace('domain1_monitor_','').replace('.dat','_clean')}', expected_columns)
         else:
-            data = np.loadtxt(f'monitor_point_plots/{file.replace('.dat','_clean')}', skiprows=3)
+            data = np.loadtxt(f'monitor_point_plots/{file.replace('domain1_monitor_','').replace('.dat','_clean')}', skiprows=3)
             #print(f'Loaded monitor_point_plots/{file.replace('.dat','_clean')} for plotting.')
 
         data = data[::sample_factor] # sample data for plotting
@@ -60,7 +62,9 @@ if plt_pts:
         plt.title(f'{file}')
         plt.legend()
         plt.grid()
-        plt.savefig(f'monitor_point_plots/{file.replace('.dat','_plot')}', dpi=300)
+        plt.savefig(f'monitor_point_plots/{file.replace('domain1_monitor_','').replace('.dat','_plot')}', dpi=300)
+        if save_to_path:
+            plt.savefig(f'{path}{file.replace('domain1_monitor_','').replace('.dat','_plot')}', dpi=300)
         print(f'Saved plot for {file}')
 
 if plt_bulk:
@@ -68,9 +72,9 @@ if plt_bulk:
         if clean_file:
             print(f'Cleaning dataset {file}...')
             expected_columns = 6
-            blk_data = ut.clean_dat_file(path+file, f'{file.replace('.log','_clean')}', expected_columns)
+            blk_data = ut.clean_dat_file(path+file, f'{file.replace('domain1_monitor_','').replace('.log','_clean')}', expected_columns)
         else:
-            blk_data = np.loadtxt(f'monitor_point_plots/{file.replace('.log','_clean')}', skiprows=2)
+            blk_data = np.loadtxt(f'monitor_point_plots/{file.replace('domain1_monitor_','').replace('.log','_clean')}', skiprows=2)
         
         blk_data = blk_data[::sample_factor] # sample data for plotting
 
@@ -95,7 +99,9 @@ if plt_bulk:
             plt.title('Bulk Quantities')
             plt.legend()
             plt.grid()
-            plt.savefig(f'monitor_point_plots/{file.replace('.log','_plot')}', dpi=300)
+            plt.savefig(f'monitor_point_plots/{file.replace('domain1_monitor_','').replace('.log','_plot')}', dpi=300)
+            if save_to_path:
+                plt.savefig(f'{path}{file.replace('domain1_monitor_','').replace('.log','_plot')}', dpi=300)
             print(f'Saved bulk history plot for {file}')
         
         if file == 'domain1_monitor_change_history.log':
@@ -113,9 +119,14 @@ if plt_bulk:
             plt.title('Change History')
             plt.legend()
             plt.grid()
-            plt.savefig(f'monitor_point_plots/{file.replace('.log','_plot')}', dpi=300)
+            plt.savefig(f'monitor_point_plots/{file.replace('domain1_monitor_','').replace('.log','_plot')}', dpi=300)
+            if save_to_path:
+                plt.savefig(f'{path}{file.replace('domain1_monitor_','').replace('.log','_plot')}', dpi=300)
             print(f'Saved change history plot for {file}')
 
-print('='*80)
-print('All plots saved in monitor_point_plots/.')
-print('='*80)
+print('='*100)
+if save_to_path:
+    print(f'All plots saved in monitor_point_plots/ and {path}.')
+else:
+    print('All plots saved in monitor_point_plots/.')
+print('='*100)

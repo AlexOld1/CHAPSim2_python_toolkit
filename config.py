@@ -1,13 +1,13 @@
 # Define input cases ==================================================================================================================================
 
 # format: folder_path/case/1_data/quantity_timestep.dat
-folder_path = '/home/alex/sim_results/mhd_channel_validation/CPG/'
-cases = ['Ha_4'] # case names must match folder names exactly
-timesteps = ['215000','290000']
+#folder_path = '/home/alex/sim_results/mhd_channel_validation/CPG/'
+folder_path = '/home/alex/sim_results/elev_modes/'
+cases = ['Ha_200_ref'] # case names must match folder names exactly
+timesteps = ['165000']
 quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr','T'] # for time & space averaged files
-
-forcing = 'CPG' # 'CMF' or 'CPG'
-Re = [2305, 2355] # indexing matches 'cases' if different Re used. Use reference value for CPG.
+forcing = 'CMF' # 'CMF' or 'CPG'
+Re = [5000] # indexing matches 'cases' if different Re used. Use reference value for CPG.
 
 # Output ==============================================================================================================================================
 
@@ -18,27 +18,29 @@ u_prime_v_prime_on = True
 w_prime_sq_on = True
 v_prime_sq_on = True
 tke_on = True
-temp_on = False
+temp_on = True
 
 # Processing options ----------------------------------------------------------------------------------------------------------------------------------
 
 # normalisation (1D data)
-norm_by_u_tau_sq = True
-norm_ux_by_u_tau = True
-norm_y_to_y_plus = True
+norm_by_u_tau_sq = False
+norm_ux_by_u_tau = False
+norm_y_to_y_plus = False
 
 # Plotting options ------------------------------------------------------------------------------------------------------------------------------------
 
-half_channel_plot = True
+half_channel_plot = False
 linear_y_scale = True
 log_y_scale = False
 multi_plot = True
-display_fig = True
-save_fig = False
+display_fig = False
+save_fig = True
+save_to_path = True
+plot_name = '' # name for saved plot files, leave blank for default naming
 
 # reference data options
 ux_velocity_log_ref_on = True
-mhd_NK_ref_on = True # MHD turbulent channel at Re_tau=150, Ha=(4,6), Noguchi & Kasagi 1994 (thtlabs.jp)
+mhd_NK_ref_on = False # MHD turbulent channel at Re_tau=150, Ha=(4,6), Noguchi & Kasagi 1994 (thtlabs.jp)
 mkm180_ch_ref_on = False # Turbulent channel at Re_tau=180, Moser, Kim & Mansour 1999 (DOI: 10.1017/S002211209900708X)
 
 #====================================================================================================================================================
