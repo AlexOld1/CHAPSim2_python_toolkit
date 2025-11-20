@@ -218,6 +218,36 @@ def Grahsof_to_temp_diff(grahsof, beta, L, mu, rho):
 
     return delta_T
 
+def calc_fourier_number(k, rho, cp, L, timestep):
+    """
+    Calculate Fourier number.
+    
+    Fo = alpha * t / L^2
+    
+    Parameters:
+    -----------
+    k : float
+        Thermal conductivity in W/(m·K)
+    rho : float
+        Density in kg/m³
+    cp : float
+        Specific heat capacity at constant pressure in J/(kg·K)
+    alpha : float
+        Thermal diffusivity in m²/s
+    L : float
+        Characteristic length in m
+    t : float
+        Time in s
+    
+    Returns:
+    --------
+    float
+        Fourier number (dimensionless)
+    """
+    alpha = k / (rho * cp)
+    Fo = alpha * timestep / (L**2)
+    return Fo
+
 # usage
 #if __name__ == "__main__":
 
@@ -285,10 +315,17 @@ def get_prandtl(temp):
 
 if __name__ == '__main__':
     li = LiquidLithiumProperties()
-    grashof = 1 * 10**9
+
+    grashof = 5 * 10**7
     T_ref = 670
-    L_ref = 0.1
-    delta_t = Grahsof_to_temp_diff(grashof, li.coeff_vol_exp(T_ref), L_ref, li.viscosity(T_ref)*1e-6, li.density_mass(T_ref))
+    L_ref = 0.05  
+    timestep = 1.0 * 10**-5
+
+    delta_T = Grahsof_to_temp_diff(grashof, li.coeff_vol_exp(T_ref), L_ref, li.viscosity(T_ref)*1e-6, li.density_mass(T_ref))
     Pr = get_prandtl(T_ref)
-    print(f"\nFor Grahsof number {grashof:.0f} at T_ref = {T_ref} K and L_ref = {L_ref}, the temperature difference is approximately {delta_t:.2f} K.")
+    T_hot = T_ref + delta_T
+    #Fourier_num = calc_fourier_number(li.thermal_conductivity(T_hot), li.density_mass(T_hot), li.heat_capacity_p(T_hot), L_ref, timestep)
+
+    print(f"\nFor Grahsof number {grashof:.0f} at T_ref = {T_ref} K and L_ref = {L_ref}, the temperature difference is approximately {delta_T:.6f} K.")
     print(f"Prandtl number at {T_ref} K is approximately {Pr:.4f}.\n")
+    #print(f"Fourier number at T_hot = {T_hot:.2f} K over timestep {timestep} s is approximately {Fourier_num:.6f}.\n")

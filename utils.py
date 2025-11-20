@@ -5,7 +5,7 @@ from vtkmodules.util.numpy_support import vtk_to_numpy
 import pyvista as pv
 
 def data_filepath(folder_path, case, quantity, timestep):
-    return f'{folder_path}{case}/1_data/domain1_time_space_averaged_{quantity}_{timestep}.dat'
+    return f'{folder_path}{case}/1_data/domain1_tsp_avg_{quantity}_{timestep}.dat'
 
 def load_ts_avg_data(data_filepath):
     try:

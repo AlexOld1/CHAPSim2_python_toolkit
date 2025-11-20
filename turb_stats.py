@@ -29,6 +29,7 @@ class Config:
     quantities: List[str]
     forcing: str
     Re: List[str]
+    ref_temp: str
 
     # Output options
     ux_velocity_on: bool
@@ -43,6 +44,7 @@ class Config:
     norm_by_u_tau_sq: bool
     norm_ux_by_u_tau: bool
     norm_y_to_y_plus: bool
+    norm_temp_by_ref_temp: bool
 
     # Plotting options
     half_channel_plot: bool
@@ -69,6 +71,7 @@ class Config:
             quantities=config_module.quantities,
             forcing=config_module.forcing,
             Re=config_module.Re,
+            ref_temp=config_module.ref_temp,
             ux_velocity_on=config_module.ux_velocity_on,
             u_prime_sq_on=config_module.u_prime_sq_on,
             u_prime_v_prime_on=config_module.u_prime_v_prime_on,
@@ -79,6 +82,7 @@ class Config:
             norm_by_u_tau_sq=config_module.norm_by_u_tau_sq,
             norm_ux_by_u_tau=config_module.norm_ux_by_u_tau,
             norm_y_to_y_plus=config_module.norm_y_to_y_plus,
+            norm_temp_by_ref_temp=config_module.norm_temp_by_ref_temp,
             half_channel_plot=config_module.half_channel_plot,
             linear_y_scale=config_module.linear_y_scale,
             log_y_scale=config_module.log_y_scale,
@@ -228,8 +232,8 @@ class ReferenceData:
     NK_REF_PATHS = {
         'ref_NK_Ha_6': 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_6_turb.txt',
         'ref_NK_Ha_4': 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_4_turb.txt',
-        'ref_NK_uv_Ha_6': 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_6_uv_rms.txt',
-        'ref_NK_uv_Ha_4': 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_4_uv_rms.txt',
+        'ref_NK_uu12_Ha_6': 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_6_uu12_rms.txt',
+        'ref_NK_uu12_Ha_4': 'Reference_Data/Noguchi&Kasagi_mhd_ref_data/thtlabs_Ha_4_uu12_rms.txt',
     }
 
     #REF_XCOMP_HA_6_PATH = 'Reference_Data/XCompact3D_mhd_validation/u_prime_sq.txt'
@@ -244,11 +248,11 @@ class ReferenceData:
         self.NK_H6_stats: Optional[Dict[str, np.ndarray]] = None
         self.NK_ref_y_H4: Optional[np.ndarray] = None
         self.NK_ref_y_H6: Optional[np.ndarray] = None
-        self.NK_ref_y_uv_H4: Optional[np.ndarray] = None
-        self.NK_ref_y_uv_H6: Optional[np.ndarray] = None
+        self.NK_ref_y_uu12_H4: Optional[np.ndarray] = None
+        self.NK_ref_y_uu12_H6: Optional[np.ndarray] = None
 
         self.xcomp_H6_stats: Optional[Dict[str, np.ndarray]] = None
-        self.xcomp_yplus_uu_H6: Optional[np.ndarray] = None
+        self.xcomp_yplus_uu11_H6: Optional[np.ndarray] = None
 
     def load_all(self) -> None:
         """Load all enabled reference datasets"""
@@ -290,13 +294,13 @@ class ReferenceData:
 
             self.NK_ref_y_H4 = NK_data['ref_NK_Ha_4'][:, 1]
             self.NK_ref_y_H6 = NK_data['ref_NK_Ha_6'][:, 1]
-            self.NK_ref_y_uv_H4 = NK_data['ref_NK_uv_Ha_4'][:, 1]
-            self.NK_ref_y_uv_H6 = NK_data['ref_NK_uv_Ha_6'][:, 1]
+            self.NK_ref_y_uu12_H4 = NK_data['ref_NK_uu12_Ha_4'][:, 1]
+            self.NK_ref_y_uu12_H6 = NK_data['ref_NK_uu12_Ha_6'][:, 1]
 
             self.NK_H4_stats = {
                 'ux_velocity': NK_data['ref_NK_Ha_4'][:, 2] * 1.02169,
                 'u_prime_sq': np.square(NK_data['ref_NK_Ha_4'][:, 3]),
-                'u_prime_v_prime': -1 * NK_data['ref_NK_uv_Ha_4'][:, 2],
+                'u_prime_v_prime': -1 * NK_data['ref_NK_uu12_Ha_4'][:, 2],
                 'v_prime_sq': np.square(NK_data['ref_NK_Ha_4'][:, 4]),
                 'w_prime_sq': np.square(NK_data['ref_NK_Ha_4'][:, 5])
             }
@@ -304,7 +308,7 @@ class ReferenceData:
             self.NK_H6_stats = {
                 'ux_velocity': NK_data['ref_NK_Ha_6'][:, 2],
                 'u_prime_sq': np.square(NK_data['ref_NK_Ha_6'][:, 3]),
-                'u_prime_v_prime': -1 * NK_data['ref_NK_uv_Ha_6'][:, 2],
+                'u_prime_v_prime': -1 * NK_data['ref_NK_uu12_Ha_6'][:, 2],
                 'v_prime_sq': np.square(NK_data['ref_NK_Ha_6'][:, 4]),
                 'w_prime_sq': np.square(NK_data['ref_NK_Ha_6'][:, 5])
             }
@@ -347,90 +351,82 @@ class TurbStatistic(ABC):
         self.raw_results[(case, timestep)] = result
         return True
 
-    def normalize(self, ux_data: np.ndarray, Re_bulk: str, by_u_tau_sq: bool = True) -> np.ndarray:
-        """Normalize values with respect to u_tau or u_tau_sq"""
-        if self.name == 'ux_velocity' and by_u_tau_sq:
-            # Special case: normalize ux by u_tau (not squared)
-            return op.norm_ux_velocity_wrt_u_tau(ux_data, Re_bulk)
-        elif by_u_tau_sq:
-            return op.norm_turb_stat_wrt_u_tau_sq
-        else:
-            return lambda x: x  # No normalization
-
-    def apply_symmetric_average(self, values: np.ndarray) -> np.ndarray:
-        """Apply symmetric averaging"""
-        return op.symmetric_average(values)
-
     def get_half_domain(self, values: np.ndarray) -> np.ndarray:
         """Get first half of domain"""
         return values[:(len(values)//2)]
 
 
 class StreamwiseVelocity(TurbStatistic):
-    """Streamwise velocity profile (ux)"""
+    """Streamwise velocity profile (u1)"""
 
     def __init__(self):
-        super().__init__('ux_velocity', 'Streamwise Velocity', ['ux'])
+        super().__init__('ux_velocity', 'Streamwise Velocity', ['u1'])
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return op.read_profile(data_dict['ux'])
+        return op.read_profile(data_dict['u1'])
 
-class ReynoldsStressUU(TurbStatistic):
+class ReynoldsStressuu(TurbStatistic):
     """Reynolds stress u'u'"""
 
     def __init__(self):
-        super().__init__('u_prime_sq', "<u'u'>", ['ux', 'uu'])
+        super().__init__('u_prime_sq', "<u'u'>", ['u1', 'uu11'])
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return op.compute_u_prime_sq(data_dict['ux'], data_dict['uu'])
+        return op.compute_u_prime_sq(data_dict['u1'], data_dict['uu11'])
 
-class ReynoldsStressUV(TurbStatistic):
+class ReynoldsStressuu12(TurbStatistic):
     """Reynolds stress u'v'"""
 
     def __init__(self):
-        super().__init__('u_prime_v_prime', "<u'v'>", ['ux', 'uy', 'uv'])
+        super().__init__('u_prime_v_prime', "<u'v'>", ['u1', 'u2', 'uu12'])
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return op.compute_u_prime_v_prime(data_dict['ux'], data_dict['uy'], data_dict['uv'])
+        return op.compute_u_prime_v_prime(data_dict['u1'], data_dict['u2'], data_dict['uu12'])
 
-class ReynoldsStressVV(TurbStatistic):
+class ReynoldsStressuu22(TurbStatistic):
     """Reynolds stress v'v'"""
 
     def __init__(self):
-        super().__init__('v_prime_sq', "<v'v'>", ['uy', 'vv'])
+        super().__init__('v_prime_sq', "<v'v'>", ['u2', 'uu22'])
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return op.compute_v_prime_sq(data_dict['uy'], data_dict['vv'])
+        return op.compute_v_prime_sq(data_dict['u2'], data_dict['uu22'])
 
-class ReynoldsStressWW(TurbStatistic):
+class ReynoldsStressuu33(TurbStatistic):
     """Reynolds stress w'w'"""
 
     def __init__(self):
-        super().__init__('w_prime_sq', "<w'w'>", ['uz', 'ww'])
+        super().__init__('w_prime_sq', "<w'w'>", ['u3', 'uu33'])
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return op.compute_w_prime_sq(data_dict['uz'], data_dict['ww'])
+        return op.compute_w_prime_sq(data_dict['u3'], data_dict['uu33'])
     
 class TurbulentKineticEnergy(TurbStatistic):
     """Turbulent Kinetic Energy (TKE)"""
 
     def __init__(self):
-        super().__init__('TKE', 'k', ['ux', 'uy', 'uz', 'uu', 'vv', 'ww'])
+        super().__init__('TKE', 'k', ['u1', 'u2', 'u3', 'uu11', 'uu22', 'uu33'])
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        u_prime_sq = op.compute_u_prime_sq(data_dict['ux'], data_dict['uu'])
-        v_prime_sq = op.compute_v_prime_sq(data_dict['uy'], data_dict['vv'])
-        w_prime_sq = op.compute_w_prime_sq(data_dict['uz'], data_dict['ww'])
+        u_prime_sq = op.compute_u_prime_sq(data_dict['u1'], data_dict['uu11'])
+        v_prime_sq = op.compute_v_prime_sq(data_dict['u2'], data_dict['uu22'])
+        w_prime_sq = op.compute_w_prime_sq(data_dict['u3'], data_dict['uu33'])
         return op.compute_tke(u_prime_sq, v_prime_sq, w_prime_sq)
 
 class Temperature(TurbStatistic):
     """Temperature profile"""
 
-    def __init__(self):
+    def __init__(self, norm_temp_by_ref_temp: bool, ref_temp: float):
         super().__init__('temperature', 'Temperature', ['T'])
+        self.norm_temp_by_ref_temp = norm_temp_by_ref_temp
+        self.ref_temp = ref_temp
 
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return op.read_profile(data_dict['T'])
+        if self.norm_temp_by_ref_temp:
+            return op.read_profile(data_dict['T'])
+        else:
+            undim_temp = op.read_profile(data_dict['T'])
+            return undim_temp * self.ref_temp
 
 # =====================================================================================================================================================
 # PIPELINE CLASS
@@ -451,22 +447,22 @@ class TurbulenceStatsPipeline:
             self.statistics.append(StreamwiseVelocity())
 
         if self.config.u_prime_sq_on:
-            self.statistics.append(ReynoldsStressUU())
+            self.statistics.append(ReynoldsStressuu())
 
         if self.config.u_prime_v_prime_on:
-            self.statistics.append(ReynoldsStressUV())
+            self.statistics.append(ReynoldsStressuu12())
 
         if self.config.v_prime_sq_on:
-            self.statistics.append(ReynoldsStressVV())
+            self.statistics.append(ReynoldsStressuu22())
 
         if self.config.w_prime_sq_on:
-            self.statistics.append(ReynoldsStressWW())
+            self.statistics.append(ReynoldsStressuu33())
 
         if self.config.tke_on:
             self.statistics.append(TurbulentKineticEnergy())
 
         if self.config.temp_on:
-            self.statistics.append(Temperature())
+            self.statistics.append(Temperature(self.config.norm_temp_by_ref_temp, self.config.ref_temp))
 
     def compute_all(self) -> None:
         """Compute all registered statistics for all cases and timesteps"""
@@ -481,10 +477,10 @@ class TurbulenceStatsPipeline:
         for stat in self.statistics:
             for (case, timestep), values in stat.raw_results.items():
 
-                # Get ux data for normalization
-                ux_data = self.data_loader.get(case, 'ux', timestep)
+                # Get u1 data for normalization
+                ux_data = self.data_loader.get(case, 'u1', timestep)
                 if ux_data is None:
-                    print(f'Missing ux data for normalization: {case}, {timestep}')
+                    print(f'Missing u1 data for normalization: {case}, {timestep}')
                     continue
 
                 ref_Re = op.get_ref_Re(case, self.config.cases, self.config.Re)
@@ -495,10 +491,10 @@ class TurbulenceStatsPipeline:
                 else:
                     normed = values
 
-                # Special normalization for ux velocity
+                # Special normalization for u1 velocity
                 if self.config.norm_ux_by_u_tau and stat.name == 'ux_velocity':
                     normed = op.norm_ux_velocity_wrt_u_tau(ux_data, ref_Re)
-                    print(f'ux velocity normalised by u_tau for {case}, {timestep}')
+                    print(f'u1 velocity normalised by u_tau for {case}, {timestep}')
 
                 # Symmetric averaging (skip for u'v')
                 if self.config.half_channel_plot: 
@@ -709,9 +705,9 @@ class TurbulencePlotter:
 
     def _get_y_plus(self, case: str, timestep: str) -> Optional[np.ndarray]:
         """Calculate y+ coordinates for a case"""
-        ux_data = self.data_loader.get(case, 'ux', timestep)
+        ux_data = self.data_loader.get(case, 'u1', timestep)
         if ux_data is None:
-            print(f'Missing ux data for plotting: {case}, {timestep}')
+            print(f'Missing u1 data for plotting: {case}, {timestep}')
             return None
 
         if self.config.half_channel_plot:

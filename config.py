@@ -2,12 +2,13 @@
 
 # format: folder_path/case/1_data/quantity_timestep.dat
 #folder_path = '/home/alex/sim_results/mhd_channel_validation/CPG/'
-folder_path = '/home/alex/sim_results/elev_modes/'
-cases = ['Ha_200_ref'] # case names must match folder names exactly
-timesteps = ['165000']
-quantities = ['uu', 'ux', 'uy', 'uv', 'uz', 'ww','vv','pr','T'] # for time & space averaged files
+folder_path = '/home/alex/sim_results/elev_modes/Ha_200_ref/'
+cases = ['Gr10^7'] # case names must match folder names exactly
+timesteps = ['145000']
+quantities = ['u1', 'u2', 'u3', 'uu11', 'uu12', 'uu22','uu33','pr','T'] # for time & space averaged files
 forcing = 'CMF' # 'CMF' or 'CPG'
 Re = [5000] # indexing matches 'cases' if different Re used. Use reference value for CPG.
+ref_temp = [670] # Kelvin
 
 # Output ==============================================================================================================================================
 
@@ -26,6 +27,7 @@ temp_on = True
 norm_by_u_tau_sq = False
 norm_ux_by_u_tau = False
 norm_y_to_y_plus = False
+norm_temp_by_ref_temp = False
 
 # Plotting options ------------------------------------------------------------------------------------------------------------------------------------
 

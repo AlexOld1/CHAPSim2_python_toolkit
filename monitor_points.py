@@ -12,7 +12,7 @@ plt.rcParams['path.simplify_threshold'] = 1.0
 #path = '/home/alex/sim_results/mhd_heated_channel_validation/Ha_16/3_monitor/'
 #path = '/home/alex/sim_results/mesh_con_Ha_30/30_pts/3_monitor/3_monitor/'
 #path = '/home/alex/sim_results/mhd_channel_validation/CPG/Ha_4/3_monitor/'
-path = '/home/alex/sim_results/elev_modes/Ha_200_ref/3_monitor/'
+path = '/home/alex/sim_results/elev_modes/Ha_200_ref/Gr10^7/3_monitor/'
 pt_files = ['domain1_monitor_pt1_flow.dat','domain1_monitor_pt3_flow.dat','domain1_monitor_pt5_flow.dat',
          'domain1_monitor_pt2_flow.dat','domain1_monitor_pt4_flow.dat']
 blk_files = ['domain1_monitor_bulk_history.log', 'domain1_monitor_change_history.log']
@@ -21,7 +21,7 @@ plt_pts = True
 plt_bulk = True
 save_to_path = True
 
-clean_file = False
+clean_file = True
 sample_factor = 10  # Plot every nth point to reduce data density
 thermo_on = True
 
@@ -88,12 +88,12 @@ if plt_bulk:
                 h = blk_data[:,5]
 
             plt.figure(figsize=(10,6))
-            #plt.plot(time, MKE, label='Mean Kinetic Energy', linewidth=0.5)
-            #plt.plot(time, qx, label='Bulk Velocity', linewidth=0.5)
-            #plt.plot(time, gx, label='Density * Bulk Velocity', linewidth=0.5)
+            plt.plot(time, MKE, label='Mean Kinetic Energy', linewidth=0.5)
+            plt.plot(time, qx, label='Bulk Velocity', linewidth=0.5)
+            plt.plot(time, gx, label='Density * Bulk Velocity', linewidth=0.5)
             if thermo_on:
                 plt.plot(time, T, label='Bulk Temperature', linewidth=0.5)
-                #plt.plot(time, h, label='Bulk Enthalpy', linewidth=0.5)
+                plt.plot(time, h, label='Bulk Enthalpy', linewidth=0.5)
             plt.xlabel('Time')
             plt.ylabel('Bulk Flow Variables')
             plt.title('Bulk Quantities')
@@ -112,8 +112,8 @@ if plt_bulk:
 
             plt.figure(figsize=(10,6))
             plt.plot(time, mass_cons, label='Mass Conservation', linewidth=0.5)
-            plt.plot(time, mass_chng_rt, label='Mass Change Rate', linewidth=0.5)
-            plt.plot(time, KE_chng_rt, label='Kinetic Energy Change Rate', linewidth=0.5)
+            #plt.plot(time, mass_chng_rt, label='Mass Change Rate', linewidth=0.5)
+            #plt.plot(time, KE_chng_rt, label='Kinetic Energy Change Rate', linewidth=0.5)
             plt.xlabel('Time')
             plt.ylabel('Change History Variables')
             plt.title('Change History')
