@@ -365,7 +365,7 @@ class StreamwiseVelocity(TurbStatistic):
     def compute(self, data_dict: Dict[str, np.ndarray]) -> np.ndarray:
         return op.read_profile(data_dict['u1'])
 
-class ReynoldsStressuu(TurbStatistic):
+class ReynoldsStressuu11(TurbStatistic):
     """Reynolds stress u'u'"""
 
     def __init__(self):
@@ -447,7 +447,7 @@ class TurbulenceStatsPipeline:
             self.statistics.append(StreamwiseVelocity())
 
         if self.config.u_prime_sq_on:
-            self.statistics.append(ReynoldsStressuu())
+            self.statistics.append(ReynoldsStressuu11())
 
         if self.config.u_prime_v_prime_on:
             self.statistics.append(ReynoldsStressuu12())

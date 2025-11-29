@@ -2,9 +2,9 @@
 
 # format: folder_path/case/1_data/quantity_timestep.dat
 #folder_path = '/home/alex/sim_results/mhd_channel_validation/CPG/'
-folder_path = '/home/alex/sim_results/elev_modes/Ha_200_ref/'
+folder_path = '/home/alex/sim_results/elev_modes/thermo_base_cases/'
 cases = ['Gr10^7'] # case names must match folder names exactly
-timesteps = ['145000']
+timesteps = ['130000']
 quantities = ['u1', 'u2', 'u3', 'uu11', 'uu12', 'uu22','uu33','pr','T'] # for time & space averaged files
 forcing = 'CMF' # 'CMF' or 'CPG'
 Re = [5000] # indexing matches 'cases' if different Re used. Use reference value for CPG.
@@ -24,8 +24,8 @@ temp_on = True
 # Processing options ----------------------------------------------------------------------------------------------------------------------------------
 
 # normalisation (1D data)
-norm_by_u_tau_sq = False
-norm_ux_by_u_tau = False
+norm_by_u_tau_sq = True
+norm_ux_by_u_tau = True
 norm_y_to_y_plus = False
 norm_temp_by_ref_temp = False
 
