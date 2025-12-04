@@ -12,7 +12,7 @@ plt.rcParams['path.simplify_threshold'] = 1.0
 #path = '/home/alex/sim_results/mhd_heated_channel_validation/Ha_16/3_monitor/'
 #path = '/home/alex/sim_results/mesh_con_Ha_30/30_pts/3_monitor/3_monitor/'
 #path = '/home/alex/sim_results/mhd_channel_validation/CPG/Ha_4/3_monitor/'
-path = '/home/alex/sim_results/elev_modes/isothermal_base_cases/3_monitor/'
+path = '/home/alex/sim_results/elev_modes/spat_dev_mgc/buoy_opp/3_monitor/'
 pt_files = ['domain1_monitor_pt1_flow.dat','domain1_monitor_pt3_flow.dat','domain1_monitor_pt5_flow.dat',
          'domain1_monitor_pt2_flow.dat','domain1_monitor_pt4_flow.dat']
 blk_files = ['domain1_monitor_bulk_history.log', 'domain1_monitor_change_history.log']
@@ -23,7 +23,7 @@ save_to_path = True
 
 clean_file = False
 sample_factor = 10  # Plot every nth point to reduce data density
-thermo_on = False
+thermo_on = True
 
 # ====================================================================================================================================================
  
@@ -53,8 +53,8 @@ if plt_pts:
         plt.plot(time, u, label='u-velocity', linewidth=0.5)
         plt.plot(time, v, label='v-velocity', linewidth=0.5)
         plt.plot(time, w, label='w-velocity', linewidth=0.5)
-        plt.plot(time, p, label='pressure', linewidth=0.5)
-        plt.plot(time, phi, label='press. corr.', linewidth=0.5)
+        #plt.plot(time, p, label='pressure', linewidth=0.5)
+        #plt.plot(time, phi, label='press. corr.', linewidth=0.5)
         if thermo_on:
             plt.plot(time, T, label='temperature', linewidth=0.5)
         plt.xlabel('Time')

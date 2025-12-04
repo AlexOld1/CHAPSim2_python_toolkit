@@ -1,3 +1,5 @@
+# Configuration file for turb_stats script ============================================================================================================
+
 # Define input cases ==================================================================================================================================
 
 # format: folder_path/case/1_data/quantity_timestep.dat
@@ -7,7 +9,7 @@ cases = ['Gr10^7'] # case names must match folder names exactly
 timesteps = ['130000']
 quantities = ['u1', 'u2', 'u3', 'uu11', 'uu12', 'uu22','uu33','pr','T'] # for time & space averaged files
 forcing = 'CMF' # 'CMF' or 'CPG'
-Re = [5000] # indexing matches 'cases' if different Re used. Use reference value for CPG.
+Re = [5000] # indexing matches 'cases' if different Re used for different cases. Use bulk reference value for CPG.
 ref_temp = [670] # Kelvin
 
 # Output ==============================================================================================================================================
